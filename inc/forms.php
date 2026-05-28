@@ -1,0 +1,155 @@
+<?php
+/**
+ * Yuino Contact Form: フォーム登録 API
+ *
+ * 各テーマは `ycf_register_forms` フィルターでフォームを登録する：
+ *
+ *   add_filter('ycf_register_forms', function ($forms) {
+ *     $forms['contact'] = [
+ *       'label'        => 'お問い合わせ',
+ *       'page_slug'    => 'contact',
+ *       'thanks_slug'  => 'contact-thanks',
+ *       'privacy_url'  => home_url('/privacy/'),
+ *       'fields'       => [ ... ],
+ *     ];
+ *     return $forms;
+ *   });
+ */
+
+if (!defined('ABSPATH')) {
+  exit;
+}
+
+/**
+ * 登録済みフォーム一覧（フィルター結果をキャッシュ）
+ */
+function ycf_get_registered_forms() {
+  static $cache = null;
+  if ($cache !== null) {
+    return $cache;
+  }
+  $forms = apply_filters('ycf_register_forms', []);
+  if (!is_array($forms)) {
+    $forms = [];
+  }
+  $cache = [];
+  foreach ($forms as $key => $form) {
+    $key = sanitize_key($key);
+    if ($key === '' || !is_array($form)) {
+      continue;
+    }
+    $cache[$key] = wp_parse_args($form, [
+      'label'       => $key,
+      'page_slug'   => $key,
+      'thanks_slug' => $key . '-thanks',
+      'privacy_url' => '',
+      'fields'      => [],
+    ]);
+  }
+  return $cache;
+}
+
+function ycf_get_form_config($form_key) {
+  $forms = ycf_get_registered_forms();
+  return isset($forms[$form_key]) ? $forms[$form_key] : null;
+}
+
+function ycf_form_exists($form_key) {
+  return ycf_get_form_config($form_key) !== null;
+}
+
+function ycf_get_form_fields($form_key) {
+  $config = ycf_get_form_config($form_key);
+  if (!$config) {
+    return [];
+  }
+  return is_array($config['fields']) ? $config['fields'] : [];
+}
+
+function ycf_get_field_label($form_key, $field_key) {
+  $fields = ycf_get_form_fields($form_key);
+  return isset($fields[$field_key]['label']) ? $fields[$field_key]['label'] : $field_key;
+}
+
+function ycf_get_thanks_url($form_key) {
+  $config = ycf_get_form_config($form_key);
+  if (!$config) {
+    return home_url('/');
+  }
+  return home_url('/' . trim($config['thanks_slug'], '/') . '/');
+}
+
+function ycf_get_form_url($form_key) {
+  $config = ycf_get_form_config($form_key);
+  if (!$config) {
+    return home_url('/');
+  }
+  return home_url('/' . trim($config['page_slug'], '/') . '/');
+}
+
+function ycf_get_privacy_url($form_key) {
+  $config = ycf_get_form_config($form_key);
+  if (!$config) {
+    return '';
+  }
+  return $config['privacy_url'];
+}
+
+/**
+ * 連絡方法の選択肢（フィールド定義の `options` で上書き可）
+ */
+function ycf_get_default_connection_method_options() {
+  return [
+    'mail' => 'メールでの連絡を希望する',
+    'tel'  => '電話での連絡を希望する',
+    'line' => 'LINEでの連絡を希望する',
+  ];
+}
+
+function ycf_get_connection_method_options($form_key) {
+  $fields = ycf_get_form_fields($form_key);
+  if (isset($fields['connection_method']['options']) && is_array($fields['connection_method']['options'])) {
+    return $fields['connection_method']['options'];
+  }
+  return ycf_get_default_connection_method_options();
+}
+
+function ycf_get_connection_method_label($form_key, $value) {
+  $options = ycf_get_connection_method_options($form_key);
+  return isset($options[$value]) ? $options[$value] : $value;
+}
+
+/**
+ * `contact_value` フィールド（連絡先入力欄）の表示メタ。
+ * `connection_method` の選択値に応じて placeholder / inputmode / pattern を切替える。
+ */
+function ycf_get_contact_value_meta($connection_method) {
+  $defaults = [
+    'mail' => [
+      'placeholder' => '例）sample@xxx.com',
+      'inputmode'   => 'email',
+      'pattern'     => '',
+      'autocomplete'=> 'email',
+      'description' => 'メールアドレスをご入力ください',
+    ],
+    'tel' => [
+      'placeholder' => '例）09012345678',
+      'inputmode'   => 'numeric',
+      'pattern'     => '[0-9]{10,13}',
+      'autocomplete'=> 'tel',
+      'description' => '半角数字のみ（ハイフンなし）でご入力ください',
+    ],
+    'line' => [
+      'placeholder' => '例）@yourid',
+      'inputmode'   => 'text',
+      'pattern'     => '',
+      'autocomplete'=> 'off',
+      'description' => 'LINE ID をご入力ください',
+    ],
+  ];
+  $meta = apply_filters('ycf_contact_value_meta', $defaults);
+  if (isset($meta[$connection_method])) {
+    return $meta[$connection_method];
+  }
+  return $meta['mail'];
+}
