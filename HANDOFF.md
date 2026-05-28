@@ -281,13 +281,15 @@ everhome 版の `cf_*` は汎用すぎるため、プラグイン化に伴い `y
 
 | 状態キー | 表示タイトル | 判定条件 | 案内内容 |
 |---|---|---|---|
-| `forms_unregistered` | STEP 1 / 4：お問い合わせフォームを構築する | `ycf_get_registered_forms()` が空 | CC への依頼テキスト `「Yuino Contact Form を使って、お問い合わせフォームを作って」` を blockquote で提示 |
+| `forms_unregistered` | STEP 1 / 4：お問い合わせフォームを構築する | `ycf_get_registered_forms()` が空 | CC への依頼テキスト `「Yuino Contact Form を使って、お問い合わせフォームを作って。fields の構成に合わせて、管理者通知と自動返信のメール件名・本文も option_ycf_settings フィルターで案件側 functions.php に書いて」` を blockquote で提示。**fields とメール雛形を 1 回の依頼で同時に生成させる**（v0.2.1 で同時実行化） |
 | `smtp_unset` | STEP 2 / 4：SMTP 情報を設定する | `smtp_host` が空 | 下の SMTP セクションへ誘導。プロバイダ案内テーブルも参照案内 |
 | `smtp_password_unset` | STEP 3 / 4：SMTP パスワードを wp-config.php に定義する | `ycf_get_smtp_password()` が空 | **ユーザーが直接編集**する手順（追記する 1 行と挿入位置）を提示。CC は wp-config.php に介入しない |
-| `mail_body_default` | STEP 4 / 4：メール件名・本文を実フォームに合わせて編集する | メール本文が同梱デモ初期値と完全一致 | CC への依頼テキスト `「フォーム内容とサイト情報に合わせて、管理者通知と自動返信のメール件名・本文を整えて」` を提示 |
+| `mail_body_default` | STEP 4 / 4：メール件名・本文を確認・微調整する | メール本文が同梱デモ初期値と完全一致 | **通常は STEP 1 で CC が案件版を書いているのでスキップされる**。書き忘れ／後追い対応のフォールバック。CC への依頼テキスト `「フォーム内容とサイト情報に合わせて、管理者通知と自動返信のメール件名・本文を整えて」` を提示 |
 | `ready` | ✅ 運用準備完了 | 全条件クリア | 登録済みフォーム一覧 + URL を表示 |
 
-**設計上の特徴**：CC に投げる依頼テキストを blockquote で**そのままコピペできる形**で提示する。これは「マニュアルに書いてあることを CC に翻訳して伝える」手間を削り、利用者の認知負荷を最小化するため。
+**設計上の特徴**：
+- CC に投げる依頼テキストを blockquote で**そのままコピペできる形**で提示する。これは「マニュアルに書いてあることを CC に翻訳して伝える」手間を削り、利用者の認知負荷を最小化するため。
+- **STEP 1 と STEP 4 を同一指示に統合**（v0.2.1）：fields 実装と同時にメール本文も案件版で生成させ、利用者が CC に依頼する回数を最小化。STEP 4 は「念のための保険」として残し、CC が書き忘れたケース／後追いで微調整したいケース向けのフォールバックとして機能する。
 
 ### 3-9. メール雛形プリセット（2 層構造）
 
@@ -303,7 +305,9 @@ everhome 版の `cf_*` は汎用すぎるため、プラグイン化に伴い `y
 - 案件側で `option_ycf_settings` フィルターを使い、「DB 空キーのみ案件固有雛形で埋める」方式で対応
 - 2504hannan で実証済み。詳細実装は同案件の `functions.php` 参照
 
-**標準パターン**（v0.2 で確立）：
+**標準パターン**（v0.2 で確立 / v0.2.1 で STEP 1 依頼文と統合）：
+
+CC への依頼は **STEP 1 の依頼文に統合**されている。fields を作る指示と一緒に「fields の構成に合わせてメール雛形も `option_ycf_settings` フィルターで案件側に書いて」が同じ blockquote に含まれており、CC は 1 回の応答で `ycf_register_forms` フィルターと `option_ycf_settings` フィルターの両方をテーマの `functions.php` に書く。コード例：
 ```php
 add_filter('option_ycf_settings', function ($value) {
   if (!is_array($value)) { $value = []; }
