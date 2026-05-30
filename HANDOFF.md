@@ -625,3 +625,32 @@ git 履歴が v0.1.0 → v0.2.0 移行期に喪失したため、その間の主
 2. ローカルリポにリモート追加 → `git push origin main --tags`
 3. `gh release create v0.2.4` で初回 Release 作成
 4. 配布先（2504hannan）で「更新あり（0.2.4）」通知が出ることを確認
+
+### v0.2.5（2026-05-30）
+
+- **Plugin Header に `Update URI` を追加** — `Update URI: https://github.com/yuino-Yuji/yuino-contact-form` を `yuino-contact-form.php` のメタブロックに追加。WP 5.8+ の仕様で、これがあると WordPress は **wordpress.org にある同名 slug プラグインによる誤上書きをスキップ**する。PUC 公式 README で「外部リポジトリ運用なら必須」とされている安全装置
+- **`readme.txt` を新規同梱** — WP プラグインリポジトリの慣習形式（`=== Plugin Name ===` で始まる構造化テキスト）。WP プラグイン一覧の「**詳細を表示**」モーダルに、Description / Installation / FAQ / Changelog の各タブで内容が自動表示されるようになる。PUC が GitHub から取得して `plugins_api` フィルター経由で WP に流し込む仕組み
+- **配布先案件担当者向けの導線が整備された** — これまで「使い方は GitHub の README.md を見て」と口頭・別チャネル誘導していたものを、WP 管理画面の「詳細を表示」モーダルで完結させられるようになった。FAQ には CC を使わない手動セットアップ・SMTP 設定・Turnstile・テンプレート上書き・MX プリフライト・メール到達性（iCloud 問題）等、運用で訊かれそうな項目を網羅
+
+#### 背景
+
+v0.2.4 を 2504hannan 本番（works.yuino-design.com/066hannan）に手動投入後、ユーザーから 2 件の質問が連続して上がった：
+
+1. 「自動更新を有効化」リンクが出ていない → WP 5.5+ の「裏で勝手に自動更新」機能の UI で、PUC の手動ワンクリック更新とは別系統。出ていなくて正常（私の前回説明が誤誘導だった）
+2. 「詳細を表示」リンクで使い方が見られないか → これは WP プラグイン標準の `readme.txt` 同梱で実現可能 → v0.2.5 で対応
+
+`Update URI` ヘッダ追加は PUC ドキュメントで以前から推奨されていたが、v0.2.4 の段階では入れ忘れていた。同名 `yuino-contact-form` が wordpress.org に登録されるリスクは現状ほぼゼロだが、念のため安全装置として追加。
+
+#### 設計判断ポイント
+
+- **`readme.txt` を選んだ理由（vs Markdown）** — PUC は両形式対応（Parsedown 同梱の理由）だが、`readme.txt` は WP プラグインリポジトリの伝統的フォーマットで、modal 表示時に **Description / Installation / FAQ / Changelog のタブ構造**が自動で組まれる。Markdown だと 1 ペイン表示になる。配布先での閲覧 UX としては readme.txt 方式が明らかに優れる
+- **README.md / HANDOFF.md と `readme.txt` の役割分担** — README.md は GitHub 上で開発者・案件担当 CC 向けの詳細ドキュメント、HANDOFF.md は引き継ぎ・経緯の集約。`readme.txt` は **WP 管理画面ユーザー向けの簡潔な使い方ガイド** — 重複は気にせず、配布先の閲覧導線最適化を優先する
+- **`Update URI` の URL** — `Plugin URI` と同じ GitHub リポを指定（`https://github.com/yuino-Yuji/yuino-contact-form`）。PUC の VCS API URL（`buildUpdateChecker` 第 1 引数）と一致する形式
+
+#### 残作業
+
+このプラグイン本体側のコード変更は完了。残りは：
+
+1. v0.2.5 タグ push → `gh release create v0.2.5`
+2. 配布先（2504hannan）で `?puc_check_for_updates=1&puc_slug=yuino-contact-form` を踏む → プラグイン一覧で「新しいバージョン 0.2.5 が利用可能」が出るか確認
+3. ワンクリック更新で 0.2.4 → 0.2.5 への遷移が成功するか確認 → **自動更新フローの実地検証完了**
