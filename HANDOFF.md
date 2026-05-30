@@ -598,3 +598,30 @@ git 履歴が v0.1.0 → v0.2.0 移行期に喪失したため、その間の主
   - **背景**：2504hannan ドッグフーディングで `bause@mac.com`（iCloud）宛の自動返信が silent reject される事象を観測。SMTP リレー側ログでは送信成功扱いだが受信箱に届かない。iCloud 等の厳格なスパムフィルタが「返信不能な one-way 自動メール」をスコア減点する典型挙動だったため、業界標準の自動応答識別ヘッダ群と Reply-To を追加して deliverability 上の signal を改善
 - **変数名 cleanup** — `ycf_send_autoreply` 内で受信者アドレスを保持する変数を `$reply_to` → `$recipient` に改名（Reply-To ヘッダ値と紛らわしいため）
 - **README.md に「メール到達性のための DNS 整備チェックリスト」追加** — SPF/DKIM/DMARC は各サイトの送信元ドメインで運用者が整備する責任範囲であることを明示。プラグイン同梱ヘッダだけでは認証 DNS の代替にはならない
+
+### v0.2.4（2026-05-30）
+
+- **自動更新機構の組み込み** — [Plugin Update Checker（PUC）v5.7](https://github.com/YahnisElsts/plugin-update-checker)（MIT）を `vendor/plugin-update-checker/` に同梱。`yuino-contact-form.php` 末尾で初期化し、`https://github.com/yuino-Yuji/yuino-contact-form/`（main ブランチ）の Release を 12 時間ごとに監視する。配布先（実案件）の WP 管理画面 → プラグイン一覧に通常の「更新あり」通知が出るようになり、**ワンクリックで最新版に更新可能**（rsync→FTP 手動転送が不要になる）
+- **方針：GitHub リポジトリは public 運用**で開始 — コード自体に機密はなく、private 運用にすると配布先で GitHub Personal Access Token の配布管理が必要になるため。private 化が必要になった時点で `wp-config.php` に `YCF_GITHUB_TOKEN` を定義してもらう設計（README 11 章に詳細）
+- **`.gitignore` から `vendor/` を除外** — PUC ライブラリは配布物に同梱する必要があるため git 管理対象に変更。コメントで「Composer 由来の依存物は使用しない」旨を明記
+- **README.md に「11. 自動更新（Plugin Update Checker）」セクション追加** — リリース手順（タグ push → GitHub Release 作成 → 自動配信）、バージョン番号 3 箇所同期ルール（Plugin Header / `YCF_VERSION` 定数 / git タグ）、動作確認方法（`?puc_check_for_updates=1` パラメータ）、private リポ運用時の Token 設定例
+- **更新ペイロードは GitHub 自動生成 source archive（zipball）** を採用 — `enableReleaseAssets()` は呼ばない方針。YCF はソースリポジトリ自体が配布物なので、Release に ZIP を別途添付する手間が不要
+
+#### 背景
+
+2504hannan ドッグフーディングを起点として、v0.2.1 → v0.2.2 → v0.2.3 と連続でリリースする中で、配布先（works.yuino-design.com/066hannan）に対する rsync→FTP の手動転送が毎回発生していた。本体側のバージョンアップを必須とする理由（セキュリティパッチ・WP/PHP 進化追従・新フィルター API・案件間バグ修正横展開）は明確で、今後 YCF 利用案件が増えれば手動転送負担は指数関数的に膨らむ。PUC + GitHub Release 方式はこの構造的問題を一気に解消する。
+
+#### 設計判断ポイント
+
+- **PUC ライブラリ同梱範囲**：`Puc/`（コア）/ `vendor/`（Parsedown：changelog 表示用）/ `css/` `js/`（debug bar、4KB ずつ）/ `languages/`（284KB の翻訳）/ `load-v5p7.php` / `plugin-update-checker.php` / `license.txt` を含めた。除外：`.git/` / `build/` / `examples/` / `composer.json` / `phpcs.xml` / `README.md`。合計 ~664KB
+- **PUC 初期化位置**：`yuino-contact-form.php` 末尾（`is_admin()` 分岐より後）。管理画面 / フロント両方で更新チェックが必要なため（WP の `update_plugins` トランジェントはフロント側でも参照される）
+- **`file_exists()` ガード**：開発中に `vendor/plugin-update-checker/` を一時退避するケースを想定して防御的に組んだ。本番ではガード句を通る経路は発生しない
+
+#### 残作業（v0.2.4 リリース完了に必要）
+
+このプラグイン本体側のコード変更は完了している。残りは **メンテナ側（yuji）の GitHub 操作**：
+
+1. GitHub に `yuino-Yuji/yuino-contact-form` リポジトリを作成（public）
+2. ローカルリポにリモート追加 → `git push origin main --tags`
+3. `gh release create v0.2.4` で初回 Release 作成
+4. 配布先（2504hannan）で「更新あり（0.2.4）」通知が出ることを確認

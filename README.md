@@ -354,3 +354,75 @@ GPL-2.0-or-later
 - 管理画面の 4 ステップ UI は「CC への依頼テキスト」を提示するが、これは無視して手動で進めて構わない（UI 側で「ready」と表示されれば運用可能）
 - メール雛形プリセットは同梱サンプル fields 前提の文面なので、独自 fields を使う場合は管理画面で書き換えるか、`option_ycf_settings` フィルターで上書き（6 節参照）
 - テンプレートのマークアップカスタムは `themes/<theme>/yuino-contact-form/` 配下に同名ファイルを置くだけ（4 節参照）
+
+---
+
+## 11. 自動更新（Plugin Update Checker）
+
+v0.2.4 以降、YCF は [Plugin Update Checker（PUC）](https://github.com/YahnisElsts/plugin-update-checker)（同梱・MIT）を経由して **GitHub Release から直接更新を取得**する。配布先（実案件）の WP 管理画面 → プラグイン一覧に通常の「更新あり」通知が出るので、**ワンクリックで最新版に更新できる**（rsync→FTP 手動転送は不要）。
+
+### 配布先（案件）側で必要な作業
+
+**何も無い**。`vendor/plugin-update-checker/` が同梱されているため、プラグイン有効化と同時に GitHub の Release を 12 時間ごとに監視する。新しいタグ（例：`v0.2.5`）が登場すれば、WP 管理画面に更新通知が出る。
+
+GitHub リポジトリが **public** の場合は GitHub Personal Access Token も不要。
+
+### リリース手順（メンテナ側）
+
+新バージョンをリリースする際の標準フロー：
+
+```bash
+# 1. 変更を main にコミット（バージョンバンプ含む）
+#    - yuino-contact-form.php の Plugin Header `Version:` を更新
+#    - 同ファイルの `define('YCF_VERSION', '...')` を更新
+#    - HANDOFF.md 8 章に履歴追加
+git add -A && git commit -m "vX.Y.Z: ..."
+
+# 2. タグを打って push
+git tag vX.Y.Z
+git push origin main
+git push origin vX.Y.Z
+
+# 3. GitHub Release を作成（gh CLI または UI）
+gh release create vX.Y.Z --title "vX.Y.Z" --notes "リリースノート本文"
+```
+
+PUC は GitHub が自動生成する **source archive（zipball）** をそのまま更新ペイロードとして利用するので、ZIP アセットを別途添付する必要はない。
+
+### 動作確認方法
+
+配布先で「更新が利用可能」と表示されない場合：
+
+1. WP 管理画面 → ダッシュボード → 更新 で手動チェック
+2. または管理画面 URL に `?puc_check_for_updates=1&puc_slug=yuino-contact-form` を付与して即時チェック（PUC のデバッグ機能）
+3. PHP エラーログで `Plugin Update Checker` 関連のエラー有無を確認
+
+### バージョン番号の同期ルール
+
+**3 箇所**を必ず同じバージョン文字列にする：
+
+| 箇所 | 用途 |
+|---|---|
+| `yuino-contact-form.php` の Plugin Header `Version:` | WP が読み取る正本 |
+| 同ファイル `define('YCF_VERSION', ...)` | 内部参照（assets enqueue 等） |
+| git タグ `vX.Y.Z` | PUC が GitHub Release を検知する基準 |
+
+過去に Plugin Header と git タグがズレて更新検知が動かない事案（v0.2.0 / v0.2.1 のバンプ漏れ → v0.2.2 で解消）があった。**Plugin Header の数値が git タグより小さいと、PUC は「現在のほうが新しい」と誤判定して更新通知を出さない**ので注意。
+
+### 非対応にしたい場合（private リポ運用）
+
+GitHub リポジトリを private に切り替えたい場合は、配布先 `wp-config.php` に Personal Access Token を定義する：
+
+```php
+define('YCF_GITHUB_TOKEN', 'ghp_xxxxxxxxxxxxxxxx');
+```
+
+`yuino-contact-form.php` の PUC 初期化ブロックに以下を追記する想定（現バージョンは public 前提なので未組み込み）：
+
+```php
+if (defined('YCF_GITHUB_TOKEN') && YCF_GITHUB_TOKEN) {
+  $ycf_update_checker->setAuthentication(YCF_GITHUB_TOKEN);
+}
+```
+
+現在の運用は **public リポジトリ前提**（コード自体に機密がないため）。private 化が必要になった時点で上記を組み込む。

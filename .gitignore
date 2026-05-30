@@ -2,6 +2,10 @@
 Thumbs.db
 *.log
 node_modules/
-vendor/
 .vscode/
 .idea/
+
+# vendor/ は配布物に含めるため git 管理対象とする
+# （PUC ライブラリを vendor/plugin-update-checker/ に同梱）
+# Composer 由来の依存物は使用しない
+
