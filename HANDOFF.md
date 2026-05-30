@@ -1,6 +1,6 @@
 # Yuino Contact Form 引き継ぎメモ
 
-> 作成日: 2026-05-10  / 最終更新: 2026-05-28  / バージョン: **0.2.0**
+> 作成日: 2026-05-10  / 最終更新: 2026-05-30  / バージョン: **0.2.3**
 > 作業環境: `plugin-dev` (Local for Flywheel)
 > 想定起点ディレクトリ: `/Volumes/BUFFALO HD-PCGU3-A/Local Sites/plugin-dev/app/public/wp-content`
 
@@ -578,3 +578,23 @@ git 履歴が v0.1.0 → v0.2.0 移行期に喪失したため、その間の主
 - 統合スナップショットを初回コミットとして登録
 - タグ `v0.2.0` 付与
 - README.md / HANDOFF.md を v0.2.0 仕様に全面改訂
+
+### v0.2.1（2026-05-28）
+
+- **STEP 1 依頼文の統合** — fields 登録とメール雛形オーバーライドの依頼文を「同時実行版」に統合（管理画面オンボーディング UI、`ycf_get_onboarding_state()` 関連）
+
+### v0.2.2（2026-05-30）
+
+- **入力画面の Turnstile 重複表示を削除** — `templates/form-input.php` から Turnstile ウィジェットブロック削除。サーバ側で検証していたのは確認画面（`ycf_handle_submit`）のみで、入力画面の Turnstile は装飾化していた。Turnstile トークンは使い捨てのため二重表示は無意味＋ UX 悪化
+- **バージョン文字列を同期** — Plugin Header と `YCF_VERSION` 定数を `0.1.0` → `0.2.2`（v0.2.0 / v0.2.1 タグ時のバンプ漏れを解消）
+
+### v0.2.3（2026-05-30）
+
+- **自動返信メールの到達性向上ヘッダ追加** — `inc/mailer.php` の `ycf_send_autoreply()` に以下 4 ヘッダを付与：
+  - `Auto-Submitted: auto-replied`（RFC 3834：自動応答であることを宣言）
+  - `Precedence: auto_reply`（慣習：応答ループ抑止）
+  - `X-Auto-Response-Suppress: All`（Outlook/Exchange：応答抑制）
+  - `Reply-To: <管理者通知 To の先頭アドレス>`（noreply で行き止まりにせず、返信を業務窓口に集約）
+  - **背景**：2504hannan ドッグフーディングで `bause@mac.com`（iCloud）宛の自動返信が silent reject される事象を観測。SMTP リレー側ログでは送信成功扱いだが受信箱に届かない。iCloud 等の厳格なスパムフィルタが「返信不能な one-way 自動メール」をスコア減点する典型挙動だったため、業界標準の自動応答識別ヘッダ群と Reply-To を追加して deliverability 上の signal を改善
+- **変数名 cleanup** — `ycf_send_autoreply` 内で受信者アドレスを保持する変数を `$reply_to` → `$recipient` に改名（Reply-To ヘッダ値と紛らわしいため）
+- **README.md に「メール到達性のための DNS 整備チェックリスト」追加** — SPF/DKIM/DMARC は各サイトの送信元ドメインで運用者が整備する責任範囲であることを明示。プラグイン同梱ヘッダだけでは認証 DNS の代替にはならない

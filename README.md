@@ -219,6 +219,28 @@ CSS はプラグインに同梱していない。テーマ側で自由にスタ�
 
 **既知の限界**：ローカルドメイン（`*.local`）や独自 MX 転送サービスでは偽陽性が出る場合あり。
 
+### メール到達性のための DNS 整備チェックリスト（送信元ドメイン側の責任）
+
+プラグインは v0.2.3 以降、自動返信に到達性向上ヘッダ（`Auto-Submitted` / `Precedence` / `X-Auto-Response-Suppress` / `Reply-To`）を自動付与する。ただし**送信元ドメインの DNS が整っていないと、どんなにヘッダを盛っても受信側スパムフィルタを通過しきれない**（特に iCloud / 国内大手キャリアは厳格）。
+
+各サイトの送信元ドメイン（`smtp_from_email` のドメイン）に以下を必ず整備する：
+
+| レコード | 必須／推奨 | 内容 |
+|---|---|---|
+| **SPF** | 必須 | 送信元 SMTP プロバイダの include を含める例：Google Workspace `v=spf1 include:_spf.google.com ~all` |
+| **DKIM** | 必須 | プロバイダ管理画面で生成した公開鍵を `<selector>._domainkey.<domain>` に TXT で公開（Workspace なら `google._domainkey`） |
+| **DMARC** | 推奨（強） | 最低限 `v=DMARC1; p=none; rua=mailto:...` を `_dmarc.<domain>` に TXT で公開。**iCloud は DMARC 未公開ドメインを警戒する傾向あり** |
+
+**注意点**：
+
+- サブドメイン送信（例：`noreply@works.example.com`）の場合、**親ドメイン**ではなく**サブドメイン自身**に SPF/DKIM/DMARC を持たせる必要がある場合あり（受信側の alignment ポリシー次第）
+- Google Workspace SMTP リレーを使う場合、**送信元アドレスのドメインを Workspace で登録（プライマリ／セカンダリ／エイリアス）しておかないと DKIM 署名が付かず**、SPF だけパスしても DKIM 不在で iCloud に silent reject される
+- `noreply@` 接頭辞は Apple iCloud で bulk/marketing 扱いされやすい。ビジネス要件が許せば `info@` `contact@` 等に変えるとさらに到達率向上
+
+**動作確認の方法**：
+
+`check-auth@verifier.port25.com` 等の認証チェックサービスに本フォーム経由でテスト送信すると、SPF/DKIM/DMARC の各検査結果を含む詳細レポートが Reply-To に返ってくる（Google Workspace 管理コンソールのメールログ検索でも送信側の認証状態を確認可能）。
+
 ### メール本文で使えるプレースホルダ
 
 | 共通 | 説明 |

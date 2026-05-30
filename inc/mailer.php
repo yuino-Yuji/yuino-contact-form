@@ -150,10 +150,19 @@ function ycf_send_admin_notification($form_key, $data) {
 
 /**
  * ユーザー宛 自動返信メール送信
+ *
+ * 到達性向上のため、以下のヘッダを付与する：
+ * - Auto-Submitted / Precedence / X-Auto-Response-Suppress:
+ *   RFC 3834 および各メールサーバ慣習に基づき「自動応答メール」と明示。
+ *   受信側スパムフィルタが汎用判定から除外しやすくなる。
+ * - Reply-To:
+ *   ユーザーが自動返信に直接返信した際、noreply@ で行き止まりにならず
+ *   管理者通知宛先に届くようにする。「返信不能アドレスからの一方通行」
+ *   と判定されるリスクを低減。
  */
 function ycf_send_autoreply($form_key, $data) {
-  $reply_to = ycf_resolve_user_email($data);
-  if (!$reply_to) {
+  $recipient = ycf_resolve_user_email($data);
+  if (!$recipient) {
     return null;
   }
 
@@ -169,9 +178,19 @@ function ycf_send_autoreply($form_key, $data) {
   $subject = ycf_render_template($subject_tmpl, $data, $form_key);
   $body    = ycf_render_template($body_tmpl, $data, $form_key);
 
-  $headers = ['Content-Type: text/plain; charset=UTF-8'];
+  $headers = [
+    'Content-Type: text/plain; charset=UTF-8',
+    'Auto-Submitted: auto-replied',
+    'Precedence: auto_reply',
+    'X-Auto-Response-Suppress: All',
+  ];
 
-  return wp_mail($reply_to, $subject, $body, $headers);
+  $admin_to_list = ycf_parse_email_list($settings[$prefix . 'admin_to'] ?? '');
+  if (!empty($admin_to_list)) {
+    $headers[] = 'Reply-To: ' . $admin_to_list[0];
+  }
+
+  return wp_mail($recipient, $subject, $body, $headers);
 }
 
 /**
