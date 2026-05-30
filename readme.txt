@@ -4,7 +4,7 @@ Tags: contact form, mail, claude code, cc-first
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.2.6
+Stable tag: 0.2.7
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -84,6 +84,9 @@ v0.2.3 で自動返信メールに `Auto-Submitted: auto-replied` 等の到達�
 
 == Changelog ==
 
+= 0.2.7 =
+* README.md に「12. 他の WordPress サイトに導入する」セクションを追加（CC を使った導入のテンプレ依頼文・手動セットアップ手順・共有時チェックリストを整備）
+
 = 0.2.6 =
 * プラグイン一覧の「アップデートを確認」リンクを**更新がある時だけ表示**する挙動に変更（PUC の `puc_manual_check_link-<slug>` フィルタ経由）
 
@@ -131,3 +134,6 @@ WP プラグイン一覧の「詳細を表示」モーダルでこの readme が
 
 = 0.2.6 =
 「アップデートを確認」リンクが常時表示から「更新がある時だけ表示」に変わります。
+
+= 0.2.7 =
+他サイトへの導入手順（CC 向けテンプレ依頼文・手動セットアップ手順）を README に整備しました。コードベースの変更はありません。

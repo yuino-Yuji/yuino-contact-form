@@ -426,3 +426,64 @@ if (defined('YCF_GITHUB_TOKEN') && YCF_GITHUB_TOKEN) {
 ```
 
 現在の運用は **public リポジトリ前提**（コード自体に機密がないため）。private 化が必要になった時点で上記を組み込む。
+
+---
+
+## 12. 他の WordPress サイトに導入する
+
+YCF を別のサイト（自分以外の案件・知人案件等）に導入してもらう場合、**Claude Code（CC）に丸投げできる**ように設計されている。
+
+### Claude Code（CC）を使う場合（推奨・最短）
+
+導入先サイトの CC に、以下のメッセージを送るだけで完了する：
+
+> ```
+> https://github.com/yuino-Yuji/yuino-contact-form の最新リリースを
+> この WordPress サイトに導入してください。
+> 導入後、フォームの fields 構成について相談します。
+> ```
+
+CC が以下を自動で実行する：
+
+1. GitHub Release ページから最新版 source archive zip を取得
+2. ディレクトリ名を `yuino-contact-form/` にリネーム
+3. `wp-content/plugins/yuino-contact-form/` へ配置
+4. WordPress 管理画面でプラグインを有効化
+5. 「設定 → お問い合わせ設定」の 4 ステップ オンボーディング UI に誘導
+
+その後は本 README 上段「クイックスタート」のフローに乗ればよい（fields 登録の依頼文が UI に表示される）。
+
+### CC を使わない場合（手動）
+
+1. [GitHub Release ページ](https://github.com/yuino-Yuji/yuino-contact-form/releases/latest)を開く
+2. 「**Source code (zip)**」リンクからダウンロード
+3. ローカルで zip を解凍 → ルートディレクトリ名（`yuino-Yuji-yuino-contact-form-<hash>/`）を **`yuino-contact-form/`** にリネーム → 再 zip 化
+4. WordPress 管理画面 → プラグイン → 新規追加 → 「プラグインのアップロード」→ 再 zip 化したファイルを選択
+5. 有効化 → 「設定 → お問い合わせ設定」で 4 ステップ UI に従って進める
+
+> ⚠️ **再 zip 化を省略してアップロードしてはいけない**：GitHub source archive zip の内部ルートはハッシュ入りのディレクトリ名になる。WordPress はその名前のまま `wp-content/plugins/` に展開するため、PUC が次回更新時に `yuino-contact-form/` へリネームしようとして衝突する（自動更新が破綻する）。FTP / ファイルマネージャ経由でアップロードする場合は、解凍してリネームしてから直接配置すれば再 zip 化は不要。
+
+### 導入後の運用
+
+v0.2.4 以降は Plugin Update Checker（PUC）を内蔵しているため、**初回導入後はバージョンアップを意識する必要がない**：
+
+- 12 時間ごとに PUC が GitHub の最新 Release を確認
+- 新バージョンが見つかると WordPress 管理画面に通常の「更新あり」通知が出る
+- ワンクリック更新で適用完了
+
+詳細は本 README「11. 自動更新（Plugin Update Checker）」参照。
+
+### 共有時のチェックリスト
+
+導入先サイトに渡すべき情報：
+
+- [ ] このリポジトリの URL：`https://github.com/yuino-Yuji/yuino-contact-form`
+- [ ] CC 向けの依頼文テンプレート（上記参照）
+- [ ] フォームの fields 想定構成（後から相談するでも可）
+
+導入先サイトで満たすべき技術的前提：
+
+- [ ] WordPress 6.0+
+- [ ] PHP 8.0+
+- [ ] インターネット経由で github.com にアクセスできる環境（自動更新のため）
+- [ ] SMTP 送信設定が可能（共用サーバ／Google Workspace／Microsoft 365 等、プロバイダ別案内は管理画面 UI に表示される）
