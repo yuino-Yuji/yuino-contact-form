@@ -233,19 +233,6 @@ $method_value = isset($data['connection_method']) && $data['connection_method'] 
       </div>
     <?php endforeach; ?>
 
-    <?php if (ycf_is_turnstile_configured()): ?>
-      <div class="ContactForm__Field ContactForm__Field--turnstile">
-        <div class="ContactForm__Control">
-          <div
-            class="cf-turnstile"
-            data-sitekey="<?php echo esc_attr(ycf_get_setting('turnstile_site_key')); ?>"
-            data-theme="light"
-            data-language="ja"
-          ></div>
-        </div>
-      </div>
-    <?php endif; ?>
-
   </div>
 
   <div class="ContactForm__Submit">
