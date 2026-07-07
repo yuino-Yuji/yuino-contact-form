@@ -142,7 +142,7 @@ add_filter('ycf_register_forms', function ($forms) {
 |---|---|
 | `text` | 1行テキスト |
 | `email` | メールアドレス（自動でフォーマット検証） |
-| `tel` | 電話番号 |
+| `tel` | 電話番号（**半角数字とハイフン(-)のみ**を自動検証。それ以外の文字は弾く） |
 | `textarea` | 複数行テキスト |
 | `select` | プルダウン（`options` 必須） |
 | `radio` | ラジオボタン（`options` 必須） |
@@ -159,7 +159,7 @@ add_filter('ycf_register_forms', function ($forms) {
 | `maxlength` | 最大文字数（バリデーションにも使用） |
 | `autocomplete` | `autocomplete` 属性（`name`／`tel`／`email` 等） |
 | `pattern` | HTML5 `pattern` 属性 |
-| `default` | radio の初期選択値 |
+| `default` | radio の初期選択値（**未指定時は最初の選択肢が自動で選択される**） |
 | `options` | select／radio の選択肢（連想配列：`value => label`） |
 | `rows` | textarea の行数（既定6） |
 

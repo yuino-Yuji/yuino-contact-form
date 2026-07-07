@@ -135,7 +135,17 @@ $method_value = isset($data['connection_method']) && $data['connection_method'] 
           </div>
 
         <?php elseif ($type === 'radio'): ?>
-          <?php $current_radio = ($key === 'connection_method') ? $method_value : $value; ?>
+          <?php
+          if ($key === 'connection_method') {
+            $current_radio = $method_value;
+          } else {
+            // 通常のラジオ：送信値 > 明示 default > 最初の選択肢 の優先順で初期選択（常にいずれかを selected に）
+            $current_radio = ($value !== '') ? $value : ($field['default'] ?? '');
+            if ($current_radio === '' && !empty($field['options'])) {
+              $current_radio = array_key_first($field['options']);
+            }
+          }
+          ?>
           <div class="ContactForm__LabelRow">
             <span class="ContactForm__Label"><?php echo esc_html($field['label'] ?? $key); ?></span>
             <?php if ($required): ?><span class="ContactForm__Required" aria-label="必須">必須</span><?php endif; ?>

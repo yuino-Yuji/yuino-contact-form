@@ -39,6 +39,12 @@ function ycf_validate($form_key, $data) {
       continue;
     }
 
+    // 電話番号（type='tel'）は半角数字とハイフン(-)のみ許可。それ以外の文字を弾く
+    if ($type === 'tel' && !preg_match('/\A[0-9\-]+\z/', $value)) {
+      $errors[$key] = ($field['label'] ?? '電話番号') . 'は半角数字とハイフン（-）のみでご入力ください。';
+      continue;
+    }
+
     if ($type === 'contact_value') {
       $method = isset($data['connection_method']) ? $data['connection_method'] : '';
       switch ($method) {
