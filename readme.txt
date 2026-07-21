@@ -4,7 +4,7 @@ Tags: contact form, mail, claude code, cc-first
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.2.8
+Stable tag: 0.2.9
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -83,6 +83,10 @@ v0.2.3 で自動返信メールに `Auto-Submitted: auto-replied` 等の到達�
 非推奨。`wp-config.php` に `DISALLOW_FILE_EDIT` 推奨。本体を編集すると次回の自動更新で上書きされます。カスタムが必要な場合は `ycf_register_forms` フィルターや `option_ycf_settings` フィルター、テーマ側のテンプレート上書きで対応してください。
 
 == Changelog ==
+
+= 0.2.9 =
+* `type='tel'` の入力を検証前に**半角へ自動正規化**（全角数字・全角/各種ハイフン・空白・丸括弧を吸収）。日本語環境で IME が全角のまま入力され確認画面へ進めなくなる問題を解消
+* `type='contact_value'` も連絡方法が `tel` のときは同じ正規化を適用
 
 = 0.2.8 =
 * `type='tel'` フィールドに標準バリデーションを追加（**半角数字とハイフン(-)のみ許可**。それ以外の文字は確認画面へ進めずエラー表示）
