@@ -43,6 +43,7 @@ function ycf_get_registered_forms() {
       'page_slug'   => $key,
       'thanks_slug' => $key . '-thanks',
       'privacy_url' => '',
+      'anchor'      => '',
       'fields'      => [],
     ]);
   }
@@ -79,12 +80,45 @@ function ycf_get_thanks_url($form_key) {
   return home_url('/' . trim($config['thanks_slug'], '/') . '/');
 }
 
+/**
+ * フォームが設置されたページの URL。
+ *
+ * 入力 → 確認 → 入力（修正）の遷移は admin-post.php を経由した PRG リダイレクトで行うため、
+ * 何もしないとリダイレクト先がページ最上部になり、確認画面が画面外になる。
+ * フォーム定義に `anchor`（例: 'form'）を指定すると、その id へのフラグメントを付けて戻す。
+ *
+ * 固定ヘッダーがあるテーマでは、アンカー先が隠れないよう対象要素に
+ * `scroll-margin-top: <ヘッダー高>` を指定すること（CSS 側の責務）。
+ */
 function ycf_get_form_url($form_key) {
   $config = ycf_get_form_config($form_key);
   if (!$config) {
     return home_url('/');
   }
-  return home_url('/' . trim($config['page_slug'], '/') . '/');
+  $slug = trim((string) $config['page_slug'], '/');
+
+  // フロントページに設置された場合、home_url('/<slug>/') は正規化リダイレクト（301 → '/'）を挟む。
+  // フラグメント付きで戻す際に余計な往復が生まれるため、実際のパーマリンクを引いて直接その URL を使う。
+  // 該当ページが見つからない場合は従来どおりスラッグから組み立てる。
+  $url  = '';
+  $page = $slug !== '' ? get_page_by_path($slug) : null;
+  if ($page) {
+    $permalink = get_permalink($page);
+    if (is_string($permalink) && $permalink !== '') {
+      $url = $permalink;
+    }
+  }
+  if ($url === '') {
+    $url = home_url('/' . $slug . '/');
+  }
+
+  // フラグメントに使えない文字を落とす（id 属性に使える範囲だけ通す）
+  $anchor = preg_replace('/[^A-Za-z0-9_\-]/', '', ltrim((string) ($config['anchor'] ?? ''), '#'));
+  if ($anchor !== '') {
+    $url .= '#' . $anchor;
+  }
+
+  return $url;
 }
 
 function ycf_get_privacy_url($form_key) {

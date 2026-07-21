@@ -39,6 +39,11 @@ add_filter('ycf_register_forms', function ($forms) {
     'page_slug'   => 'contact',          // 入力ページのスラッグ（例：/contact/）
     'thanks_slug' => 'contact-thanks',   // サンクスページのスラッグ
     'privacy_url' => home_url('/privacy/'), // プライバシーポリシーURL（任意）
+    'anchor'      => 'form',             // 任意。フォームを囲む要素の id。
+                                         // 指定すると入力⇄確認のリダイレクト先に #form が付き、
+                                         // 確認画面がページ最上部ではなくフォーム位置で表示される。
+                                         // 固定ヘッダーがあるテーマでは対象要素に
+                                         // scroll-margin-top: <ヘッダー高> を併せて指定すること
     'fields'      => [
       'purpose' => [
         'label'       => 'ご相談目的',

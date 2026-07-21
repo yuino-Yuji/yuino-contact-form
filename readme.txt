@@ -4,7 +4,7 @@ Tags: contact form, mail, claude code, cc-first
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.2.9
+Stable tag: 0.2.10
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -83,6 +83,10 @@ v0.2.3 で自動返信メールに `Auto-Submitted: auto-replied` 等の到達�
 非推奨。`wp-config.php` に `DISALLOW_FILE_EDIT` 推奨。本体を編集すると次回の自動更新で上書きされます。カスタムが必要な場合は `ycf_register_forms` フィルターや `option_ycf_settings` フィルター、テーマ側のテンプレート上書きで対応してください。
 
 == Changelog ==
+
+= 0.2.10 =
+* フォーム定義に `anchor` オプションを追加。指定すると入力⇄確認のリダイレクト先に `#<id>` が付き、**確認画面がページ最上部ではなくフォーム位置で表示**される（未指定時は従来どおり）
+* 固定ヘッダーのあるテーマでは、対象要素に `scroll-margin-top: <ヘッダー高>` を併せて指定すること
 
 = 0.2.9 =
 * `type='tel'` の入力を検証前に**半角へ自動正規化**（全角数字・全角/各種ハイフン・空白・丸括弧を吸収）。日本語環境で IME が全角のまま入力され確認画面へ進めなくなる問題を解消
