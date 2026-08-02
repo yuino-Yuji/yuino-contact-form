@@ -315,6 +315,17 @@ add_filter('option_ycf_settings', function ($value) {
 | action | `ycf_after_send` | 送信後フック（`$form_key, $data`） |
 | filter | `option_ycf_settings`（WP 標準） | メール雛形等の DB 値を読む直前に上書き（6 節参照） |
 
+> **注意：`option_ycf_settings` は「設定を一度も保存していない」間は発火しない。**
+> WordPress は `ycf_settings` オプションが DB に存在しない場合、`option_*` ではなく
+> `default_option_*` フィルターを通す。テーマ側でメール雛形等を固定したい場合は、
+> **両方に同じコールバックを登録**しておくこと（管理画面で一度保存すれば `option_*`
+> だけでも効くようになるが、保存前は無反応になり原因が分かりにくい）。
+>
+> ```php
+> add_filter('option_ycf_settings', 'mytheme_ycf_filter_settings');
+> add_filter('default_option_ycf_settings', 'mytheme_ycf_filter_settings');
+> ```
+
 ---
 
 ## 8. 動作フロー

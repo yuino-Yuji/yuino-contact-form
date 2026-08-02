@@ -2,17 +2,19 @@
 /**
  * Yuino Contact Form: 確認画面パーシャル
  *
- * @var string $form  登録済みフォームキー
- * @var array  $data  入力済みデータ
+ * @var string $form    登録済みフォームキー
+ * @var array  $data    入力済みデータ
+ * @var array  $errors  送信時のエラーメッセージ（Turnstile 失敗・メール送信失敗など）
  */
 
 if (!defined('ABSPATH')) {
   exit;
 }
 
-$args = $args ?? [];
-$form = $args['form'] ?? '';
-$data = $args['data'] ?? [];
+$args   = $args ?? [];
+$form   = $args['form']   ?? '';
+$data   = $args['data']   ?? [];
+$errors = $args['errors'] ?? [];
 
 if (!ycf_form_exists($form)) {
   return;
@@ -25,6 +27,12 @@ $back_action_url   = admin_url('admin-post.php');
 ?>
 
 <div class="ContactForm ContactForm--confirm" data-ycf-form="<?php echo esc_attr($form); ?>" data-ycf-step="confirm-view">
+  <?php if (!empty($errors['_global'])): ?>
+    <div class="ContactForm__GlobalError" role="alert">
+      <?php echo esc_html($errors['_global']); ?>
+    </div>
+  <?php endif; ?>
+
   <p class="ContactForm__ConfirmLead">下記の内容で送信します。よろしければ「送信する」を押してください。</p>
 
   <dl class="ContactForm__ConfirmList">

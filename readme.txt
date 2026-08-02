@@ -4,7 +4,7 @@ Tags: contact form, mail, claude code, cc-first
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.2.10
+Stable tag: 0.2.11
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -83,6 +83,11 @@ v0.2.3 で自動返信メールに `Auto-Submitted: auto-replied` 等の到達�
 非推奨。`wp-config.php` に `DISALLOW_FILE_EDIT` 推奨。本体を編集すると次回の自動更新で上書きされます。カスタムが必要な場合は `ycf_register_forms` フィルターや `option_ycf_settings` フィルター、テーマ側のテンプレート上書きで対応してください。
 
 == Changelog ==
+
+= 0.2.11 =
+* **確認画面に送信エラーが表示されない不具合を修正**。Turnstile 検証失敗・管理者通知の送信失敗は step=confirm で差し戻されるが、`form-section.php` が確認画面テンプレートに `errors` を渡しておらず、画面に何も出ないため利用者からは「送信ボタンを押しても無反応」に見えていた
+* `form-confirm.php` に `_global` エラーの表示（`.ContactForm__GlobalError` / `role="alert"`）を追加。入力画面と同じマークアップ規約に揃えた
+* README: `option_ycf_settings` は設定を一度も保存していない間は発火せず `default_option_ycf_settings` を通る点を注記（両方に登録が必要）
 
 = 0.2.10 =
 * フォーム定義に `anchor` オプションを追加。指定すると入力⇄確認のリダイレクト先に `#<id>` が付き、**確認画面がページ最上部ではなくフォーム位置で表示**される（未指定時は従来どおり）

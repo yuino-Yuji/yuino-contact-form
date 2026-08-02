@@ -34,9 +34,12 @@ if (ycf_is_turnstile_configured()) {
 }
 
 if ($step === 'confirm') {
+  // errors も渡す。送信失敗（Turnstile 失敗・管理者通知失敗）は step=confirm で
+  // 差し戻されるため、渡さないと画面に何も出ず「押しても無反応」に見える
   ycf_get_template('form-confirm.php', [
-    'form' => $form,
-    'data' => $data,
+    'form'   => $form,
+    'data'   => $data,
+    'errors' => $errors,
   ]);
 } else {
   ycf_get_template('form-input.php', [
