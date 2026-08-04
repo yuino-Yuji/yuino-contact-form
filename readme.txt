@@ -4,7 +4,7 @@ Tags: contact form, mail, claude code, cc-first
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.2.11
+Stable tag: 0.2.12
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -83,6 +83,13 @@ v0.2.3 で自動返信メールに `Auto-Submitted: auto-replied` 等の到達�
 非推奨。`wp-config.php` に `DISALLOW_FILE_EDIT` 推奨。本体を編集すると次回の自動更新で上書きされます。カスタムが必要な場合は `ycf_register_forms` フィルターや `option_ycf_settings` フィルター、テーマ側のテンプレート上書きで対応してください。
 
 == Changelog ==
+
+= 0.2.12 =
+* **自動返信と Reply-To の宛先解決を修正**（重要）。従来は `email` という名前のフィールドしか見ておらず、メール欄が `email_corp` / `email_personal` のように別名だったり複数あったりするフォームでは、**自動返信が一通も送られず、管理者通知に Reply-To も付かなかった**
+* 解決順に「**フォーム定義で `type='email'` のフィールドを走査し、値が入っている最初のものを採用**」のフォールバックを追加。フィールド名に依存せず動作する
+* 返信先を明示指定するための `ycf_user_email` フィルターを追加（`($email, $data, $form_key)`）
+* 管理者通知の Reply-To を `ycf_resolve_user_email()` に一本化（自動返信の宛先と必ず一致するようになった）
+* `ycf_resolve_user_email()` に第 2 引数 `$form_key` を追加（省略可。既存の呼び出しはそのまま動作）
 
 = 0.2.11 =
 * **確認画面に送信エラーが表示されない不具合を修正**。Turnstile 検証失敗・管理者通知の送信失敗は step=confirm で差し戻されるが、`form-section.php` が確認画面テンプレートに `errors` を渡しておらず、画面に何も出ないため利用者からは「送信ボタンを押しても無反応」に見えていた

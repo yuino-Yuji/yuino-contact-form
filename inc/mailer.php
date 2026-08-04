@@ -137,12 +137,11 @@ function ycf_send_admin_notification($form_key, $data) {
     $headers[] = 'Bcc: ' . $addr;
   }
 
-  if (!empty($data['contact_value']) && !empty($data['connection_method']) && $data['connection_method'] === 'mail') {
-    if (is_email($data['contact_value'])) {
-      $headers[] = 'Reply-To: ' . $data['contact_value'];
-    }
-  } elseif (!empty($data['email']) && is_email($data['email'])) {
-    $headers[] = 'Reply-To: ' . $data['email'];
+  // 管理者が受信メールから直接返信できるよう、問い合わせ者のアドレスを Reply-To に付ける。
+  // 解決は ycf_resolve_user_email() に一本化する（自動返信の宛先と必ず同じ結果になる）。
+  $reply_to = ycf_resolve_user_email($data, $form_key);
+  if ($reply_to) {
+    $headers[] = 'Reply-To: ' . $reply_to;
   }
 
   return wp_mail($to, $subject, $body, $headers);
@@ -161,7 +160,7 @@ function ycf_send_admin_notification($form_key, $data) {
  *   と判定されるリスクを低減。
  */
 function ycf_send_autoreply($form_key, $data) {
-  $recipient = ycf_resolve_user_email($data);
+  $recipient = ycf_resolve_user_email($data, $form_key);
   if (!$recipient) {
     return null;
   }
@@ -195,18 +194,53 @@ function ycf_send_autoreply($form_key, $data) {
 
 /**
  * ユーザーへ返信できるメールアドレスを抽出。
- * - `email` フィールドがあればそれを優先
- * - `connection_method` が `mail` のときの `contact_value`
+ *
+ * 解決順：
+ * 1. `email` という名前のフィールド（最も一般的な命名）
+ * 2. `connection_method` が `mail` のときの `contact_value`
+ * 3. **フォーム定義で type=email のフィールドを順に走査し、値が入っている最初のもの**
+ *
+ * 3 が無いと、メール欄の名前が `email` 以外のフォーム
+ * （タブ切替で `email_corp` / `email_personal` に分かれている等）で
+ * 自動返信が一通も送られず、管理者通知に Reply-To も付かない。
+ * フィールド名を `email` に固定していたのは設計上の穴だったため、
+ * 定義済みフィールドの型から自動解決するフォールバックを既定に加える。
+ *
+ * @param array  $data     サニタイズ済みの送信値
+ * @param string $form_key フォームキー（省略時は 3 のフォールバックが働かない）
+ * @return string|null
  */
-function ycf_resolve_user_email($data) {
+function ycf_resolve_user_email($data, $form_key = '') {
+  $resolved = null;
+
   if (!empty($data['email']) && is_email($data['email'])) {
-    return $data['email'];
+    $resolved = $data['email'];
   }
-  $method = $data['connection_method'] ?? '';
-  if ($method === 'mail' && !empty($data['contact_value']) && is_email($data['contact_value'])) {
-    return $data['contact_value'];
+
+  if ($resolved === null) {
+    $method = $data['connection_method'] ?? '';
+    if ($method === 'mail' && !empty($data['contact_value']) && is_email($data['contact_value'])) {
+      $resolved = $data['contact_value'];
+    }
   }
-  return null;
+
+  if ($resolved === null && $form_key !== '') {
+    foreach (ycf_get_form_fields($form_key) as $key => $field) {
+      if (($field['type'] ?? '') !== 'email') {
+        continue;
+      }
+      if (!empty($data[$key]) && is_email($data[$key])) {
+        $resolved = $data[$key];
+        break;
+      }
+    }
+  }
+
+  /**
+   * 返信先メールアドレスの上書き。
+   * 複数のメール欄があり、どれを返信先にするかをフォーム側で決めたい場合に使う。
+   */
+  return apply_filters('ycf_user_email', $resolved, $data, $form_key);
 }
 
 function ycf_parse_email_list($raw) {
