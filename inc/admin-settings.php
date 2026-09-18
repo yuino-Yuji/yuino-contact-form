@@ -241,8 +241,8 @@ function ycf_section_turnstile_intro() {
 }
 
 function ycf_section_no_forms_intro() {
-  echo '<p>フォームが登録されていません。ページ上部のセットアップ案内に従って、Claude Code にフォーム構築を依頼してください。</p>';
-  echo '<p class="description">Claude Code を使わない場合は <a href="https://github.com/yuino-Yuji/yuino-contact-form#readme" target="_blank" rel="noopener">README の手動セットアップ手順</a> を参照してください（テーマの <code>functions.php</code> に <code>ycf_register_forms</code> フィルターでフォーム定義を登録します）。</p>';
+  echo '<p>フォームが登録されていません。ページ上部のセットアップ案内を参照してください。</p>';
+  echo '<p class="description">フォーム定義はテーマの <code>functions.php</code> に <code>ycf_register_forms</code> フィルターで登録します。手順は <a href="https://github.com/yuino-Yuji/yuino-contact-form#readme" target="_blank" rel="noopener">README</a> を参照してください。</p>';
 }
 
 function ycf_sanitize_settings($input) {
@@ -381,7 +381,9 @@ function ycf_get_onboarding_state() {
 
 /**
  * 状態に応じたセットアップ案内パネルを出力する。
- * 「次にユーザーが取るべき行動」を、Claude Code への引き継ぎを主役にして提示。
+ * 「次にユーザーが取るべき行動」を提示する。
+ * 管理画面は納品後にクライアントも目にするため、特定の開発ツール（Claude Code 等）には言及しない。
+ * 開発ツールを使った依頼文は README に置く。
  */
 function ycf_render_onboarding_panel() {
   $state = ycf_get_onboarding_state();
@@ -389,21 +391,20 @@ function ycf_render_onboarding_panel() {
     'forms_unregistered' => [
       'class'   => 'notice notice-info',
       'title'   => '🚀 セットアップ STEP 1 / 4：お問い合わせフォームを構築する',
-      'body'    => '<p>Claude Code に次のように依頼してください：</p>'
-                 . '<blockquote style="background:#f6f7f7;border-left:4px solid #2271b1;padding:12px 16px;margin:8px 0;"><strong>「Yuino Contact Form を使って、お問い合わせフォームを作って。fields の構成に合わせて、管理者通知と自動返信のメール件名・本文も <code>option_ycf_settings</code> フィルターで案件側 <code>functions.php</code> に書いて」</strong></blockquote>'
-                 . '<p>CC が <strong>1 回の依頼で</strong>、<code>functions.php</code> へのフォーム定義追加 ＋ メール雛形プリセット（<code>option_ycf_settings</code> フィルター）＋ テンプレートファイル作成 ＋ 固定ページ作成までを自動で行います。</p>'
-                 . '<p class="description">この時点で fields に整合する形のメール本文も書かれるので、STEP 4 は通常スキップされます（必要なら最終チェックと微調整に使えます）。CC を使わない場合は <a href="https://github.com/yuino-Yuji/yuino-contact-form#readme" target="_blank" rel="noopener">README の手動セットアップ手順</a> を参照してください。</p>',
+      'body'    => '<p>テーマの <code>functions.php</code> に <code>ycf_register_forms</code> フィルターでフォーム定義を登録し、フォームを表示する固定ページを作成してください。</p>'
+                 . '<p>あわせて <code>option_ycf_settings</code> フィルターで、フォームの項目に合わせた管理者通知・自動返信メールの件名・本文を設定しておくと、STEP 4 は不要になります。</p>'
+                 . '<p class="description">手順は <a href="https://github.com/yuino-Yuji/yuino-contact-form#readme" target="_blank" rel="noopener">README</a> を参照してください。</p>',
     ],
     'smtp_unset' => [
       'class'   => 'notice notice-info',
       'title'   => '📧 セットアップ STEP 2 / 4：SMTP 情報を設定する',
       'body'    => '<p>レンタルサーバーから提供されている SMTP アカウント情報を、下の「SMTP設定」セクションに入力してください。</p>'
-                 . '<p class="description">Claude Code に <strong>「SMTP 情報を設定して」</strong> と依頼することも可能です（CC が必要な情報を尋ねます）。</p>',
+                 . '<p class="description">SMTP パスワードはここでは入力せず、次の STEP で <code>wp-config.php</code> に記述します。</p>',
     ],
     'smtp_password_unset' => [
       'class'   => 'notice notice-warning',
       'title'   => '🔐 セットアップ STEP 3 / 4：SMTP パスワードを wp-config.php に定義する',
-      'body'    => '<p>SMTP パスワードは DB ではなく <code>wp-config.php</code> に定数として直接記述します。Claude Code のチャット履歴に実パスワードが残らないよう、<strong>あなた自身が <code>wp-config.php</code> を直接編集</strong>してください（CC 経由で書かないことが推奨フローです）。</p>'
+      'body'    => '<p>SMTP パスワードは DB ではなく <code>wp-config.php</code> に定数として直接記述します。パスワードをチャットやメールなど他の場所に貼り付けず、<strong><code>wp-config.php</code> を直接編集</strong>してください。</p>'
                  . '<p>以下の1行を <code>wp-config.php</code> の <code>/* That\'s all, stop editing! */</code> の上に追記：</p>'
                  . '<blockquote style="background:#fcf9e8;border-left:4px solid #dba617;padding:12px 16px;margin:8px 0;font-family:monospace;">'
                  . 'define( \'YCF_SMTP_PASSWORD\', \'実際のSMTPパスワード\' );'
@@ -414,10 +415,7 @@ function ycf_render_onboarding_panel() {
     'mail_body_default' => [
       'class'   => 'notice notice-info',
       'title'   => '📝 セットアップ STEP 4 / 4：メール件名・本文を確認・微調整する',
-      'body'    => '<p>メール件名・本文がプラグイン同梱のデモ初期値のままです。通常は STEP 1 で CC が <code>option_ycf_settings</code> フィルター経由の案件版を作っているはずですが、書き忘れたか、まだ書いていない可能性があります。</p>'
-                 . '<p>CC に追加で依頼するか、下のメール設定セクションで直接編集してください。CC への依頼例：</p>'
-                 . '<blockquote style="background:#f6f7f7;border-left:4px solid #2271b1;padding:12px 16px;margin:8px 0;"><strong>「フォーム内容とサイト情報に合わせて、管理者通知と自動返信のメール件名・本文を整えて」</strong></blockquote>'
-                 . '<p class="description">CC が書いた案件版本文をベースに、文言・敬語・連絡先などの細部を微調整するのもこのステップで行えます。</p>',
+      'body'    => '<p>メール件名・本文がプラグイン同梱のデモ初期値のままです。下のメール設定セクションで、フォームの項目とサイト情報に合わせて編集してください。</p>',
     ],
     'ready' => [
       'class'   => 'notice notice-success',
@@ -455,7 +453,7 @@ function ycf_render_ready_form_list() {
     );
   }
   return '<p>セットアップは完了しています。登録済みフォーム：</p><ul style="list-style:disc;padding-left:24px;">' . $items . '</ul>'
-       . '<p class="description">設定を変更したい場合は、下のセクションから直接編集、または Claude Code に依頼してください。</p>';
+       . '<p class="description">設定を変更したい場合は、下のセクションから編集してください。</p>';
 }
 
 function ycf_render_settings_page() {

@@ -1,48 +1,48 @@
 === Yuino Contact Form ===
 Contributors: yuino
-Tags: contact form, mail, claude code, cc-first
+Tags: contact form, mail, claude code
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.2.12
+Stable tag: 0.2.13
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-確認画面付きの軽量お問い合わせ／資料請求フォームを、コードベースで定義できるプラグイン。Claude Code（CC）への依頼でフォームを組み立てる「CC ファースト設計」。
+確認画面付きの軽量お問い合わせ／資料請求フォームを、コードベースで定義できるプラグイン。Claude Code への依頼でフォームを組み立てる「Claude Code ファースト設計」。
 
 == Description ==
 
-Yuino 内製の軽量コンタクトフォームプラグイン。Contact Form 7 / Smart Custom Fields のような汎用ビルダーではなく、**フィールド定義をコード（テーマの `functions.php`）に書く**ことを前提とした、CC（Claude Code）への依頼で組み立てる運用に特化した設計。
+Yuino 内製の軽量コンタクトフォームプラグイン。Contact Form 7 / Smart Custom Fields のような汎用ビルダーではなく、**フィールド定義をコード（テーマの `functions.php`）に書く**ことを前提とした、Claude Code への依頼で組み立てる運用に特化した設計。
 
 **主な特徴：**
 
-* **Claude Code（CC）ファースト設計** — フォーム定義・カスタム実装は CC に依頼する想定
+* **Claude Code ファースト設計** — フォーム定義・カスタム実装は Claude Code に依頼する想定
 * **フィールドはコードで定義** — 管理画面ビルダーは持たない（CF7／SMF と棲み分け）
 * **マークアップは完全カスタム可** — WooCommerce 流のテンプレート上書き対応（`themes/<theme>/yuino-contact-form/` 配下にファイルを置くだけ）
 * **依存ゼロ** — 他プラグイン不要、jQuery 不要
 * **送信フロー** — 入力 → 確認 → 送信 → サンクスページ
 * **セキュリティ** — nonce／Cloudflare Turnstile（任意）／reply-to 自動付与／MX プリフライト（管理者宛先のドメインに MX レコードがあるか送信前検証）
-* **管理画面** — 4 ステップのオンボーディング UI で「次に何をすればいいか」を可視化
+* **管理画面** — 4 ステップのセットアップ案内で「次に何をすればいいか」を可視化
 * **メール到達性ヘッダ** — `Auto-Submitted` / `Precedence` / `X-Auto-Response-Suppress` / `Reply-To` を自動付与し iCloud 等のスパム判定リスクを低減
 * **GitHub Release 経由の自動更新** — Plugin Update Checker（PUC）を同梱、WP 管理画面に通常の「更新あり」通知が出る
 
 **設計思想：**
 
-CC を使った WordPress サイト制作で、案件ごとにフォームの fields とメール雛形を「ゼロから書く」のではなく、**「Yuino Contact Form を使ってフォーム作って」と CC に依頼すれば管理画面のオンボーディング UI が依頼文を提示する**形に最適化されている。
+Claude Code を使った WordPress サイト制作で、案件ごとにフォームの fields とメール雛形を「ゼロから書く」のではなく、**Claude Code に「Yuino Contact Form を使ってフォーム作って」と依頼して 1 回で組み立てる**形に最適化されている。依頼文は GitHub の README.md「クイックスタート」に掲載。
 
 == Installation ==
 
 1. プラグインを `wp-content/plugins/yuino-contact-form/` に配置
 2. WP 管理画面 → プラグイン → 「Yuino Contact Form」を有効化
-3. 「設定 → お問い合わせ設定」を開く → 4 ステップ オンボーディング UI が現在地を表示
-4. UI に表示されている依頼文を CC にコピペで投げるだけで各 STEP が進む：
-   * STEP 1：fields とメール本文を同時生成
+3. 「設定 → お問い合わせ設定」を開く → 4 ステップのセットアップ案内が現在地を表示
+4. 案内に沿って各 STEP を進める（Claude Code への依頼文は GitHub の README.md「クイックスタート」参照）：
+   * STEP 1：fields とメール本文を設定（Claude Code に依頼すれば同時生成）
    * STEP 2：SMTP 情報を入力
    * STEP 3：`wp-config.php` に SMTP パスワードの 1 行をユーザーが直接追記
    * STEP 4：メール件名・本文を微調整（必要なら）
 5. 「運用準備完了」パネルが出れば運用開始
 
-CC を使わない手動セットアップは GitHub の README.md「10. Claude Code を利用しない場合の手動セットアップ」を参照。
+Claude Code を使わない手動セットアップは GitHub の README.md「10. Claude Code を利用しない場合の手動セットアップ」を参照。
 
 == Frequently Asked Questions ==
 
@@ -56,7 +56,7 @@ CC を使わない手動セットアップは GitHub の README.md「10. Claude 
 
 = SMTP はどう設定するの？ =
 
-管理画面「設定 → お問い合わせ設定」の STEP 2 で SMTP ホスト・ポート・暗号化方式・ユーザー名・送信元メールを入力。パスワードだけは `wp-config.php` に `define('YCF_SMTP_PASSWORD', '...');` の形で書きます（CC のチャット履歴に SMTP パスワードを残さないため）。Google Workspace / Microsoft 365 / 共用サーバーの設定例は管理画面の `<details>` パネルに表示されます。
+管理画面「設定 → お問い合わせ設定」の STEP 2 で SMTP ホスト・ポート・暗号化方式・ユーザー名・送信元メールを入力。パスワードだけは `wp-config.php` に `define('YCF_SMTP_PASSWORD', '...');` の形で書きます（Claude Code のチャット履歴に SMTP パスワードを残さないため）。Google Workspace / Microsoft 365 / 共用サーバーの設定例は管理画面の `<details>` パネルに表示されます。
 
 = Cloudflare Turnstile は必須？ =
 
@@ -84,6 +84,12 @@ v0.2.3 で自動返信メールに `Auto-Submitted: auto-replied` 等の到達�
 
 == Changelog ==
 
+= 0.2.13 =
+* **管理画面から Claude Code への言及を削除**。設定画面は納品後にクライアントも目にするため、セットアップ案内（STEP 1〜4）・フォーム未登録時の案内・「運用準備完了」パネルを、開発ツールに依存しない手順の説明に書き換えた
+* STEP 2 の「Claude Code に『SMTP 情報を設定して』と依頼することも可能」を削除。SMTP パスワードを Claude Code に渡さない方針（STEP 3）と矛盾していたため。代わりに「パスワードは次の STEP で wp-config.php に記述する」旨を案内
+* Claude Code 向けの依頼文は README.md「クイックスタート」に一本化
+* README.md / readme.txt の略記「CC」を「Claude Code」に統一（メールの CC 欄は除く）
+
 = 0.2.12 =
 * **自動返信と Reply-To の宛先解決を修正**（重要）。従来は `email` という名前のフィールドしか見ておらず、メール欄が `email_corp` / `email_personal` のように別名だったり複数あったりするフォームでは、**自動返信が一通も送られず、管理者通知に Reply-To も付かなかった**
 * 解決順に「**フォーム定義で `type='email'` のフィールドを走査し、値が入っている最初のものを採用**」のフォールバックを追加。フィールド名に依存せず動作する
@@ -109,7 +115,7 @@ v0.2.3 で自動返信メールに `Auto-Submitted: auto-replied` 等の到達�
 * ラジオボタン（`type='radio'`）の初期選択を改善（送信値 > 明示 `default` > **最初の選択肢** の優先順で、常にいずれかを selected に）
 
 = 0.2.7 =
-* README.md に「12. 他の WordPress サイトに導入する」セクションを追加（CC を使った導入のテンプレ依頼文・手動セットアップ手順・共有時チェックリストを整備）
+* README.md に「12. 他の WordPress サイトに導入する」セクションを追加（Claude Code を使った導入のテンプレ依頼文・手動セットアップ手順・共有時チェックリストを整備）
 
 = 0.2.6 =
 * プラグイン一覧の「アップデートを確認」リンクを**更新がある時だけ表示**する挙動に変更（PUC の `puc_manual_check_link-<slug>` フィルタ経由）
@@ -160,4 +166,4 @@ WP プラグイン一覧の「詳細を表示」モーダルでこの readme が
 「アップデートを確認」リンクが常時表示から「更新がある時だけ表示」に変わります。
 
 = 0.2.7 =
-他サイトへの導入手順（CC 向けテンプレ依頼文・手動セットアップ手順）を README に整備しました。コードベースの変更はありません。
+他サイトへの導入手順（Claude Code 向けテンプレ依頼文・手動セットアップ手順）を README に整備しました。コードベースの変更はありません。
