@@ -4,7 +4,7 @@ Tags: contact form, mail, claude code
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.2.13
+Stable tag: 0.2.14
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -83,6 +83,12 @@ v0.2.3 で自動返信メールに `Auto-Submitted: auto-replied` 等の到達�
 非推奨。`wp-config.php` に `DISALLOW_FILE_EDIT` 推奨。本体を編集すると次回の自動更新で上書きされます。カスタムが必要な場合は `ycf_register_forms` フィルターや `option_ycf_settings` フィルター、テーマ側のテンプレート上書きで対応してください。
 
 == Changelog ==
+
+= 0.2.14 =
+* 入力欄の「指示（ヒント）」を `hint` オプションで設定できるようにしました。出力されたテキストは `aria-describedby` で入力欄に結び付きます。
+* エラーメッセージに `id` を付与し、`aria-describedby` と `aria-invalid="true"` で入力欄に結び付けるようにしました。従来は入力欄の近くに表示するだけで、支援技術からはエラーの内容に辿り着けませんでした。
+* ラジオグループの名前を `aria-label`（文言の二重管理）から `aria-labelledby`（画面に見えているラベルを参照）へ変更しました。
+* いずれも WCAG 2.2 達成基準 3.3.2 ラベル又は指示 / 3.3.1 エラーの特定 への対応です。
 
 = 0.2.13 =
 * **管理画面から Claude Code への言及を削除**。設定画面は納品後にクライアントも目にするため、セットアップ案内（STEP 1〜4）・フォーム未登録時の案内・「運用準備完了」パネルを、開発ツールに依存しない手順の説明に書き換えた

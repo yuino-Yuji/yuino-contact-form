@@ -4,7 +4,7 @@
  * Plugin URI:  https://github.com/yuino-Yuji/yuino-contact-form
  * Update URI:  https://github.com/yuino-Yuji/yuino-contact-form
  * Description: 確認画面付きのお問い合わせ／資料請求フォームを、コードベースで定義できる軽量プラグイン。フィールド定義はテーマ側でフィルター登録、テンプレートはテーマ側で上書き可能。
- * Version:     0.2.13
+ * Version:     0.2.14
  * Author:      Yuino
  * License:     GPL-2.0-or-later
  * Text Domain: yuino-contact-form

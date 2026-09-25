@@ -160,7 +160,8 @@ add_filter('ycf_register_forms', function ($forms) {
 |---|---|
 | `label` | 表示ラベル |
 | `required` | 必須かどうか（true/false） |
-| `placeholder` | プレースホルダ |
+| `placeholder` | プレースホルダ。**ラベルの代わりにしない**（入力を始めると消えるため）。「例）〜」のような例示に使う |
+| `hint` | 入力の指示（「ハイフンなし・半角数字で」等）。入力欄の下に表示され、`aria-describedby` で入力欄に結び付く |
 | `maxlength` | 最大文字数（バリデーションにも使用） |
 | `autocomplete` | `autocomplete` 属性（`name`／`tel`／`email` 等） |
 | `pattern` | HTML5 `pattern` 属性 |

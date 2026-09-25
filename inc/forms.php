@@ -187,3 +187,27 @@ function ycf_get_contact_value_meta($connection_method) {
   }
   return $meta['mail'];
 }
+
+/**
+ * aria-describedby 属性を組み立てる
+ *
+ * 指示（hint）・エラー・動的なヘルプなど、入力欄に結び付けたい要素の id を
+ * 受け取り、空要素を除いて 1 つの属性にまとめる。近くに置いただけのテキストは
+ * 支援技術に読まれないため、必ずこの属性で参照する
+ * （WCAG 2.2 達成基準 3.3.2 ラベル又は指示 / 3.3.1 エラーの特定）。
+ *
+ * @param array $ids 参照したい要素の id（空文字・重複は無視する）
+ * @return string 例: ' aria-describedby="ycf-hint-contact-tel ycf-error-contact-tel"'
+ */
+function ycf_describedby_attr($ids) {
+  if (!is_array($ids)) {
+    $ids = [$ids];
+  }
+  $ids = array_values(array_unique(array_filter(array_map('strval', $ids), static function ($id) {
+    return $id !== '';
+  })));
+  if (empty($ids)) {
+    return '';
+  }
+  return ' aria-describedby="' . esc_attr(implode(' ', $ids)) . '"';
+}

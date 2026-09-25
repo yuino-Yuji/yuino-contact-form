@@ -69,6 +69,19 @@ $method_value = isset($data['connection_method']) && $data['connection_method'] 
       $value     = isset($data[$key]) ? $data[$key] : '';
       $has_error = !empty($errors[$key]);
       $required  = !empty($field['required']);
+
+      // 指示（hint）とエラーを、入力欄と結び付けるための id を組み立てる。
+      // 近くに置いただけのテキストは支援技術に読まれないため、必ず
+      // aria-describedby で参照する（WCAG 2.2 達成基準 3.3.2 / 3.3.1）。
+      $label_id = 'ycf-label-' . $form . '-' . $key;
+      $hint     = isset($field['hint']) ? (string) $field['hint'] : '';
+      $hint_id  = ($hint !== '') ? 'ycf-hint-' . $form . '-' . $key : '';
+      $error_id = $has_error ? 'ycf-error-' . $form . '-' . $key : '';
+
+      // 各分岐でこの配列に id を足してから ycf_describedby_attr() に渡す
+      $describe = [$hint_id, $error_id];
+
+      $invalid_attr = $has_error ? ' aria-invalid="true"' : '';
     ?>
       <div class="ContactForm__Field <?php echo $has_error ? 'is-error' : ''; ?>" data-ycf-field="<?php echo esc_attr($key); ?>">
 
@@ -92,7 +105,8 @@ $method_value = isset($data['connection_method']) && $data['connection_method'] 
                 <?php checked($value, '1'); ?>
                 <?php if ($required): ?>required<?php endif; ?>
                 data-ycf-agree="<?php echo $is_privacy ? 'true' : 'false'; ?>"
-                <?php if ($start_disabled): ?>disabled aria-describedby="ycf-agree-note-<?php echo esc_attr($form); ?>"<?php endif; ?>
+                <?php if ($start_disabled): ?>disabled<?php endif; ?>
+                <?php echo ycf_describedby_attr(array_merge($describe, [$start_disabled ? 'ycf-agree-note-' . $form : ''])) . $invalid_attr; ?>
               />
               <span class="ContactForm__CheckboxLabel">
                 <?php if ($is_privacy && $privacy_url !== ''): ?>
@@ -126,6 +140,7 @@ $method_value = isset($data['connection_method']) && $data['connection_method'] 
               name="<?php echo esc_attr($key); ?>"
               class="ContactForm__Select"
               <?php if ($required): ?>required<?php endif; ?>
+              <?php echo ycf_describedby_attr($describe) . $invalid_attr; ?>
             >
               <option value=""><?php echo esc_html($field['placeholder'] ?? '選択してください'); ?></option>
               <?php foreach (($field['options'] ?? []) as $val => $label): ?>
@@ -147,11 +162,16 @@ $method_value = isset($data['connection_method']) && $data['connection_method'] 
           }
           ?>
           <div class="ContactForm__LabelRow">
-            <span class="ContactForm__Label"><?php echo esc_html($field['label'] ?? $key); ?></span>
+            <span class="ContactForm__Label" id="<?php echo esc_attr($label_id); ?>"><?php echo esc_html($field['label'] ?? $key); ?></span>
             <?php if ($required): ?><span class="ContactForm__Required" aria-label="必須">必須</span><?php endif; ?>
           </div>
           <div class="ContactForm__Control">
-            <ul class="ContactForm__RadioList" role="radiogroup" aria-label="<?php echo esc_attr($field['label'] ?? $key); ?>">
+            <ul
+              class="ContactForm__RadioList"
+              role="radiogroup"
+              aria-labelledby="<?php echo esc_attr($label_id); ?>"
+              <?php echo ycf_describedby_attr($describe) . $invalid_attr; ?>
+            >
               <?php foreach (($field['options'] ?? []) as $val => $label): ?>
                 <li class="ContactForm__RadioItem">
                   <label class="ContactForm__Radio">
@@ -184,6 +204,7 @@ $method_value = isset($data['connection_method']) && $data['connection_method'] 
               maxlength="<?php echo esc_attr($field['maxlength'] ?? 2000); ?>"
               placeholder="<?php echo esc_attr($field['placeholder'] ?? ''); ?>"
               <?php if ($required): ?>required<?php endif; ?>
+              <?php echo ycf_describedby_attr($describe) . $invalid_attr; ?>
             ><?php echo esc_textarea($value); ?></textarea>
           </div>
 
@@ -209,7 +230,7 @@ $method_value = isset($data['connection_method']) && $data['connection_method'] 
               <?php if (!empty($meta['pattern'])): ?>pattern="<?php echo esc_attr($meta['pattern']); ?>"<?php endif; ?>
               <?php if ($required): ?>required<?php endif; ?>
               data-ycf-contact-input
-              aria-describedby="<?php echo esc_attr($help_id); ?>"
+              <?php echo ycf_describedby_attr(array_merge($describe, [$help_id])) . $invalid_attr; ?>
             />
             <p id="<?php echo esc_attr($help_id); ?>" class="ContactForm__HelpText" data-ycf-contact-help><?php echo esc_html($meta['description']); ?></p>
           </div>
@@ -232,12 +253,17 @@ $method_value = isset($data['connection_method']) && $data['connection_method'] 
               <?php if (!empty($field['autocomplete'])): ?>autocomplete="<?php echo esc_attr($field['autocomplete']); ?>"<?php endif; ?>
               <?php if (!empty($field['pattern'])): ?>pattern="<?php echo esc_attr($field['pattern']); ?>"<?php endif; ?>
               <?php if ($required): ?>required<?php endif; ?>
+              <?php echo ycf_describedby_attr($describe) . $invalid_attr; ?>
             />
           </div>
         <?php endif; ?>
 
+        <?php if ($hint !== ''): ?>
+          <p class="ContactForm__HelpText" id="<?php echo esc_attr($hint_id); ?>"><?php echo esc_html($hint); ?></p>
+        <?php endif; ?>
+
         <?php if ($has_error): ?>
-          <p class="ContactForm__Error" role="alert"><?php echo esc_html($errors[$key]); ?></p>
+          <p class="ContactForm__Error" id="<?php echo esc_attr($error_id); ?>" role="alert"><?php echo esc_html($errors[$key]); ?></p>
         <?php endif; ?>
 
       </div>
