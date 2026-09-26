@@ -125,14 +125,38 @@
     const forms = document.querySelectorAll(
       '[data-ycf-form][data-ycf-step="confirm"], [data-ycf-submit-form]'
     );
+    // 送信ボタンは form の中とは限らない（テンプレートによっては form 属性で外から結び付ける）。
+    // form.elements は form 属性で結び付いたボタンも含むので、こちらから探す。
+    const submitButtonOf = function (form) {
+      return Array.prototype.find.call(form.elements, function (el) {
+        return el.type === "submit";
+      });
+    };
+
     forms.forEach(function (form) {
-      form.addEventListener("submit", function () {
-        const button = form.querySelector('button[type="submit"]');
+      form.addEventListener("submit", function (event) {
+        const button = event.submitter || submitButtonOf(form);
         if (!button) return;
+        // setTimeout の中では、この送信に登録された全ハンドラーの実行が終わっている。
+        // テーマ側の追加検証などが preventDefault() で送信を止めた場合は、
+        // ページ遷移が起きないので無効化しない（無効化すると入力を直しても再送信できなくなる）。
         setTimeout(function () {
+          if (event.defaultPrevented) return;
           button.disabled = true;
           button.classList.add("is-loading");
         }, 0);
+      });
+    });
+
+    // ブラウザの「戻る」でページがキャッシュ（bfcache）から復元されると、
+    // 送信時に無効化したボタンがそのまま残る。復元時に元へ戻す。
+    window.addEventListener("pageshow", function (event) {
+      if (!event.persisted) return;
+      forms.forEach(function (form) {
+        const button = submitButtonOf(form);
+        if (!button) return;
+        button.disabled = false;
+        button.classList.remove("is-loading");
       });
     });
   }
