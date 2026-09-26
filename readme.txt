@@ -4,7 +4,7 @@ Tags: contact form, mail, claude code
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.2.14
+Stable tag: 0.2.15
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -83,6 +83,12 @@ v0.2.3 で自動返信メールに `Auto-Submitted: auto-replied` 等の到達�
 非推奨。`wp-config.php` に `DISALLOW_FILE_EDIT` 推奨。本体を編集すると次回の自動更新で上書きされます。カスタムが必要な場合は `ycf_register_forms` フィルターや `option_ycf_settings` フィルター、テーマ側のテンプレート上書きで対応してください。
 
 == Changelog ==
+
+= 0.2.15 =
+* **送信ボタンが無効のまま戻らない不具合を修正**（重要）。テーマ側で入力を追加検証し、`preventDefault()` で送信を止めた場合にも、送信ボタンが `disabled` / `is-loading` のまま残っていました。入力を直しても再送信できず、ページの再読み込みが必要でした。送信が止められたときは無効化しないようにしました。
+* ブラウザの「戻る」でページがキャッシュから復元されたとき、送信ボタンを元の状態に戻すようにしました。
+* 送信ボタンを `form` 属性で外から結び付けたテンプレート（確認画面の「送信する」など）でも、二重送信の防止が効くようにしました。従来は `<form>` の中のボタンしか探しておらず、防止が効いていませんでした。
+* 定数 `YCF_VERSION` がプラグインのバージョン（0.2.14）と食い違っていた（0.2.13）のを揃えました。
 
 = 0.2.14 =
 * 入力欄の「指示（ヒント）」を `hint` オプションで設定できるようにしました。出力されたテキストは `aria-describedby` で入力欄に結び付きます。
