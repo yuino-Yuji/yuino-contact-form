@@ -223,17 +223,81 @@ function ycf_section_smtp_intro() {
           <td>SSL / STARTTLS</td>
           <td>受信先のドメインが同じサーバー上にある必要あり（MX プリフライト確認）</td>
         </tr>
+        <tr>
+          <td><strong>ISP のメールサーバ（認証なし）</strong></td>
+          <td>契約 ISP 指定のホスト</td>
+          <td>465 / 587</td>
+          <td>SSL / STARTTLS</td>
+          <td>SMTP 認証を要求しない構成。<strong>認証ユーザー名を空にする</strong>とパスワードなしで接続します</td>
+        </tr>
       </tbody>
     </table>
-    <p style="margin-top:0.5em;font-size:0.9em;">パスワード／アプリパスワードは <code>wp-config.php</code> の <code>YCF_SMTP_PASSWORD</code> 定数に書きます（下のセクション参照）。</p>
+    <p style="margin-top:0.5em;font-size:0.9em;">パスワード／アプリパスワードは <code>wp-config.php</code> の <code>YCF_SMTP_PASSWORD</code> 定数に書きます（下のセクション参照）。認証を要求しないサーバでは、認証ユーザー名を空にすればパスワードの設定自体が不要です。</p>
+    <p style="margin-top:0.5em;font-size:0.9em;">ポート番号と暗号化方式の組み合わせに注意してください。<strong>587 は STARTTLS、465 は SSL</strong> です。食い違っていると接続に失敗します。</p>
   </details>
   <?php
 }
 
 function ycf_section_secrets_intro() {
-  $smtp_pw_status = ycf_get_smtp_password() !== '' ? '<strong style="color:#0a7c2f">設定済み</strong>' : '<strong style="color:#c00">未設定</strong>';
-  echo '<p>SMTPパスワード（<code>wp-config.php</code> の <code>YCF_SMTP_PASSWORD</code> 定数）：' . $smtp_pw_status . '</p>';
-  echo '<p class="description">未設定の場合はページ上部のセットアップ案内（STEP 3）を参照してください。</p>';
+  $has_password = ycf_get_smtp_password() !== '';
+  $mode         = ycf_get_smtp_mode();
+
+  $status = $has_password
+    ? '<strong style="color:#0a7c2f">設定済み</strong>'
+    : '<strong style="color:#c00">未設定</strong>';
+
+  // 認証を要求しない SMTP サーバでは、パスワードが無いのが正しい状態。
+  // 一律に赤字の「未設定」を出すと、正常な構成を異常だと誤認させてしまう。
+  if ($mode === 'noauth') {
+    $status = '<strong style="color:#0a7c2f">不要（認証なしで接続）</strong>';
+  }
+
+  echo '<p>SMTPパスワード（<code>wp-config.php</code> の <code>YCF_SMTP_PASSWORD</code> 定数）：' . $status . '</p>';
+
+  if ($mode === 'noauth') {
+    echo '<p class="description">認証ユーザー名が空のため、SMTP 認証を行わずに接続します。SMTP サーバが認証を要求しない場合はこの状態で正常です。認証が必要なサーバに切り替える場合は、認証ユーザー名を入力し、パスワードを <code>wp-config.php</code> に定義してください。</p>';
+  } else {
+    echo '<p class="description">未設定の場合はページ上部のセットアップ案内（STEP 3）を参照してください。認証を要求しない SMTP サーバを使う場合は、認証ユーザー名を空にすればパスワードは不要です。</p>';
+  }
+}
+
+/**
+ * 「SMTP は有効でないのに送信元メールアドレスだけ設定されている」状態の警告。
+ *
+ * この状態では PHP の mail() でこのサーバから直接送信されるが、
+ * 送信者としては smtp_from_email のドメインを名乗るため、
+ * そのドメインの SPF にこのサーバが含まれていない場合は
+ * 受信側で「なりすまし」と判定される。
+ *
+ * 同一ドメイン内（＝管理者通知）には届くのに、Gmail 等の外部宛（＝ユーザーへの
+ * 自動返信）にだけ届かない、という切り分けの難しい症状になるため、
+ * 設定画面で明示的に警告する。
+ */
+function ycf_render_smtp_from_mismatch_warning() {
+  $mode = ycf_get_smtp_mode();
+  if ($mode !== 'off' && $mode !== 'incomplete') {
+    return;
+  }
+
+  $from = trim((string) ycf_get_setting('smtp_from_email'));
+  if ($from === '') {
+    return;
+  }
+
+  $at     = strrpos($from, '@');
+  $domain = $at === false ? $from : substr($from, $at + 1);
+
+  printf(
+    '<div class="notice notice-error" style="padding:16px 20px;margin:20px 0;">'
+    . '<h2 style="margin-top:0;font-size:16px;">⚠️ 送信元メールアドレスだけが設定されています</h2>'
+    . '<p>SMTP 接続が有効になっていないため、メールはこのサーバから直接送信されますが、送信者としては <code>%s</code> を名乗ります。'
+    . '<strong>%s の SPF レコードにこのサーバが含まれていない場合、受信側でなりすましと判定され、迷惑メール扱いまたは受信拒否になります。</strong></p>'
+    . '<p>同じドメイン宛（管理者通知）には届くのに、Gmail 等の外部宛（ユーザーへの自動返信）にだけ届かない場合は、ほぼこの状態です。</p>'
+    . '<p>上の「SMTP設定」を完成させてメールサーバ経由の送信に切り替えるか、送信元メールアドレスを空にしてください。</p>'
+    . '</div>',
+    esc_html($from),
+    esc_html($domain)
+  );
 }
 
 function ycf_section_turnstile_intro() {
@@ -357,13 +421,12 @@ function ycf_get_onboarding_state() {
     return 'forms_unregistered';
   }
 
-  $smtp_host = trim((string) ycf_get_setting('smtp_host'));
-  if ($smtp_host === '') {
+  $mode = ycf_get_smtp_mode();
+  if ($mode === 'off') {
     return 'smtp_unset';
   }
-
-  if (ycf_get_smtp_password() === '') {
-    return 'smtp_password_unset';
+  if ($mode === 'incomplete') {
+    return 'smtp_incomplete';
   }
 
   // メール本文がプラグイン同梱のデモ初期値のままかどうか
@@ -399,18 +462,13 @@ function ycf_render_onboarding_panel() {
       'class'   => 'notice notice-info',
       'title'   => '📧 セットアップ STEP 2 / 4：SMTP 情報を設定する',
       'body'    => '<p>レンタルサーバーから提供されている SMTP アカウント情報を、下の「SMTP設定」セクションに入力してください。</p>'
-                 . '<p class="description">SMTP パスワードはここでは入力せず、次の STEP で <code>wp-config.php</code> に記述します。</p>',
+                 . '<p class="description">SMTP パスワードはここでは入力せず、次の STEP で <code>wp-config.php</code> に記述します。'
+                 . 'SMTP 認証を要求しないサーバの場合は、認証ユーザー名を空のままにすれば次の STEP は不要です。</p>',
     ],
-    'smtp_password_unset' => [
+    'smtp_incomplete' => [
       'class'   => 'notice notice-warning',
-      'title'   => '🔐 セットアップ STEP 3 / 4：SMTP パスワードを wp-config.php に定義する',
-      'body'    => '<p>SMTP パスワードは DB ではなく <code>wp-config.php</code> に定数として直接記述します。パスワードをチャットやメールなど他の場所に貼り付けず、<strong><code>wp-config.php</code> を直接編集</strong>してください。</p>'
-                 . '<p>以下の1行を <code>wp-config.php</code> の <code>/* That\'s all, stop editing! */</code> の上に追記：</p>'
-                 . '<blockquote style="background:#fcf9e8;border-left:4px solid #dba617;padding:12px 16px;margin:8px 0;font-family:monospace;">'
-                 . 'define( \'YCF_SMTP_PASSWORD\', \'実際のSMTPパスワード\' );'
-                 . '</blockquote>'
-                 . '<p>編集後にこのページを再読込すると次の STEP に進みます。</p>'
-                 . '<p class="description">Cloudflare Turnstile のシークレットキーは管理画面下部の「Cloudflare Turnstile」セクションで入力します（高機密ではないため DB 保存）。</p>',
+      'title'   => '🔐 セットアップ STEP 3 / 4：SMTP 認証情報を完成させる',
+      'body'    => ycf_render_smtp_incomplete_body(),
     ],
     'mail_body_default' => [
       'class'   => 'notice notice-info',
@@ -431,6 +489,34 @@ function ycf_render_onboarding_panel() {
     esc_html($panel['title']),
     $panel['body']
   );
+
+  ycf_render_smtp_from_mismatch_warning();
+}
+
+/**
+ * STEP 3 パネル本体：認証ユーザー名とパスワードのどちらが欠けているかで案内を変える。
+ *
+ * 認証ユーザー名だけ空の場合は「認証なしのサーバなら空が正しい」ため、
+ * 一方的にパスワード設定を促すのではなく、どちらの運用なのかを選ばせる。
+ */
+function ycf_render_smtp_incomplete_body() {
+  $has_username = ycf_get_setting('smtp_username') !== '';
+
+  if ($has_username) {
+    return '<p>認証ユーザー名が入力されていますが、SMTP パスワードが未設定です。このままでは認証に失敗するため、SMTP は無効のままになります。</p>'
+         . '<p>SMTP パスワードは DB ではなく <code>wp-config.php</code> に定数として直接記述します。パスワードをチャットやメールなど他の場所に貼り付けず、<strong><code>wp-config.php</code> を直接編集</strong>してください。</p>'
+         . '<p>以下の1行を <code>wp-config.php</code> の <code>/* That\'s all, stop editing! */</code> の上に追記：</p>'
+         . '<blockquote style="background:#fcf9e8;border-left:4px solid #dba617;padding:12px 16px;margin:8px 0;font-family:monospace;">'
+         . 'define( \'YCF_SMTP_PASSWORD\', \'実際のSMTPパスワード\' );'
+         . '</blockquote>'
+         . '<p>編集後にこのページを再読込すると次の STEP に進みます。</p>'
+         . '<p class="description">SMTP サーバが認証を要求しない場合は、代わりに<strong>認証ユーザー名を空にして保存</strong>すれば、パスワードなしで接続します。</p>'
+         . '<p class="description">Cloudflare Turnstile のシークレットキーは管理画面下部の「Cloudflare Turnstile」セクションで入力します（高機密ではないため DB 保存）。</p>';
+  }
+
+  return '<p><code>wp-config.php</code> に SMTP パスワードが定義されていますが、認証ユーザー名が空です。このままでは認証に失敗するため、SMTP は無効のままになります。</p>'
+       . '<p>上の「SMTP設定」セクションに認証ユーザー名（多くの場合はメールアドレス全体）を入力して保存してください。</p>'
+       . '<p class="description">認証なしで運用する場合は、<code>wp-config.php</code> の <code>YCF_SMTP_PASSWORD</code> の定義を削除してください。</p>';
 }
 
 /**
