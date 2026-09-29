@@ -8,9 +8,47 @@ if (!defined('ABSPATH')) {
 }
 
 /**
+ * SMTP の動作モードを判定する。
+ *
+ * - `off`        接続情報が揃っていない。wp_mail() は PHP の mail() 直送になる
+ * - `auth`       認証あり（認証ユーザー名とパスワードの両方が設定済み）
+ * - `noauth`     認証なし（認証ユーザー名とパスワードの両方が空）。
+ *                ISP のメールサーバ等、SMTP AUTH を必須にしていない構成向け
+ * - `incomplete` 認証ユーザー名とパスワードの片方だけが設定されている＝設定ミス。
+ *                そのまま接続しても認証に失敗して送信できないため SMTP を有効化しない
+ *
+ * v0.2.17 より前は認証ユーザー名とパスワードを必須としていたため、
+ * 認証を要求しない SMTP サーバでは SMTP モードに入れず mail() 直送に落ちていた。
+ * その状態でも下の setFrom() だけは効くため、「SPF に無いサーバから
+ * 送信元ドメインを名乗る」なりすまし判定を受ける事故が起きた（管理画面で警告する）。
+ *
+ * @return string off|auth|noauth|incomplete
+ */
+function ycf_get_smtp_mode() {
+  $settings = ycf_get_settings();
+
+  foreach (['smtp_host', 'smtp_port', 'smtp_from_email'] as $key) {
+    if (empty($settings[$key])) {
+      return 'off';
+    }
+  }
+
+  $has_username = !empty($settings['smtp_username']);
+  $has_password = ycf_get_smtp_password() !== '';
+
+  if ($has_username && $has_password) {
+    return 'auth';
+  }
+  if (!$has_username && !$has_password) {
+    return 'noauth';
+  }
+  return 'incomplete';
+}
+
+/**
  * PHPMailer 設定をフォーム送信時のみ流し込む。
  * - smtp_from_email が入っていれば From を上書き（SMTP接続有無を問わず）
- * - SMTP接続情報＋パスワードが揃っていれば SMTP モードに切替
+ * - SMTP接続情報が揃っていれば SMTP モードに切替（認証あり／なしは自動判定）
  */
 function ycf_configure_phpmailer($phpmailer) {
   $settings = ycf_get_settings();
@@ -26,23 +64,23 @@ function ycf_configure_phpmailer($phpmailer) {
   $phpmailer->CharSet  = 'UTF-8';
   $phpmailer->Encoding = '8bit';
 
-  $password = ycf_get_smtp_password();
-  $required = ['smtp_host', 'smtp_port', 'smtp_username', 'smtp_from_email'];
-  foreach ($required as $key) {
-    if (empty($settings[$key])) {
-      return;
-    }
-  }
-  if (empty($password)) {
+  $mode = ycf_get_smtp_mode();
+  if ($mode === 'off' || $mode === 'incomplete') {
     return;
   }
 
   $phpmailer->isSMTP();
-  $phpmailer->Host     = $settings['smtp_host'];
-  $phpmailer->Port     = (int) $settings['smtp_port'];
-  $phpmailer->SMTPAuth = true;
-  $phpmailer->Username = $settings['smtp_username'];
-  $phpmailer->Password = $password;
+  $phpmailer->Host = $settings['smtp_host'];
+  $phpmailer->Port = (int) $settings['smtp_port'];
+
+  if ($mode === 'auth') {
+    $phpmailer->SMTPAuth = true;
+    $phpmailer->Username = $settings['smtp_username'];
+    $phpmailer->Password = ycf_get_smtp_password();
+  } else {
+    // 認証なし。PHPMailer の既定値も false だが、意図を明示するため設定する
+    $phpmailer->SMTPAuth = false;
+  }
 
   $encryption = $settings['smtp_encryption'];
   if ($encryption === 'starttls') {

@@ -148,7 +148,13 @@ function ycf_handle_submit() {
     exit;
   }
 
-  ycf_send_autoreply($form_key, $data);
+  // 自動返信は失敗しても送信自体は成立とみなす（管理者には既に届いているため）。
+  // ただし戻り値を捨てると「ユーザーにだけ届かない」障害が一切ログに残らないので記録する。
+  // null = 送信対象なし（宛先が解決できない／雛形が未設定）、false = wp_mail() が失敗。
+  $autoreply_sent = ycf_send_autoreply($form_key, $data);
+  if ($autoreply_sent === false) {
+    error_log('[YuinoContactForm] Autoreply failed for form: ' . $form_key);
+  }
 
   do_action('ycf_after_send', $form_key, $data);
 
