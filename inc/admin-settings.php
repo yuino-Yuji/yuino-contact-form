@@ -559,6 +559,167 @@ function ycf_render_settings_page() {
       submit_button('変更を保存');
       ?>
     </form>
+
+    <?php ycf_render_test_mail_box(); ?>
   </div>
   <?php
+}
+
+/**
+ * 送信テストのフォームと直近の結果を表示する。
+ *
+ * フォームからの送信が失敗しても、画面には「メール送信に失敗しました」としか
+ * 出ない（ユーザーにサーバのエラーを見せるわけにいかない）。
+ * その結果、原因の特定にサーバのログが要る＝管理者だけでは詰められない状態だった。
+ * ここで管理者が任意の宛先へ送信し、失敗時は SMTP の応答をそのまま読めるようにする。
+ */
+function ycf_render_test_mail_box() {
+  $current = wp_get_current_user();
+  $default_to = $current && $current->user_email ? $current->user_email : '';
+  $result = get_transient('ycf_test_mail_result_' . get_current_user_id());
+  if ($result) {
+    delete_transient('ycf_test_mail_result_' . get_current_user_id());
+  }
+  ?>
+  <hr>
+  <h2>送信テスト</h2>
+  <p>現在の設定でテストメールを 1 通送信します。フォームからの送信と同じ経路を通るので、設定変更後の確認に使えます。</p>
+  <p class="description">失敗した場合はサーバからの応答をそのまま表示します。宛先には、判定の厳しいメールサービス（Gmail / iCloud 等）を指定すると到達性まで確認できます。</p>
+
+  <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
+    <input type="hidden" name="action" value="ycf_test_mail">
+    <?php wp_nonce_field('ycf_test_mail'); ?>
+    <table class="form-table" role="presentation">
+      <tr>
+        <th scope="row"><label for="ycf_test_to">送信先</label></th>
+        <td>
+          <input type="email" id="ycf_test_to" name="ycf_test_to" class="regular-text"
+                 value="<?php echo esc_attr($default_to); ?>" required>
+        </td>
+      </tr>
+    </table>
+    <?php submit_button('テスト送信', 'secondary'); ?>
+  </form>
+
+  <?php
+  if (!is_array($result)) {
+    return;
+  }
+
+  if (!empty($result['ok'])) {
+    printf(
+      '<div class="notice notice-success" style="padding:12px 16px;"><p><strong>送信しました</strong>（宛先：%s）。'
+      . '受信トレイに届いているか、迷惑メールフォルダに入っていないかを確認してください。</p>'
+      . '<p class="description">送信処理の成功は、相手のサーバが受け取ったところまでを示します。受信側のフィルタで迷惑メール扱いになる可能性は別途あります。</p></div>',
+      esc_html($result['to'])
+    );
+  } else {
+    printf(
+      '<div class="notice notice-error" style="padding:12px 16px;"><p><strong>送信に失敗しました</strong>（宛先：%s）</p>'
+      . '<p style="font-family:monospace;white-space:pre-wrap;background:#fff;padding:10px;border:1px solid #ccd0d4;">%s</p></div>',
+      esc_html($result['to']),
+      esc_html($result['error'])
+    );
+  }
+
+  if (!empty($result['transcript'])) {
+    printf(
+      '<details style="margin:12px 0;"><summary style="cursor:pointer;">SMTP サーバとのやり取りを表示</summary>'
+      . '<pre style="background:#fff;padding:10px;border:1px solid #ccd0d4;overflow:auto;max-height:420px;">%s</pre></details>',
+      esc_html($result['transcript'])
+    );
+  }
+}
+
+/**
+ * 送信テストの実行。
+ */
+function ycf_handle_test_mail() {
+  if (!current_user_can('manage_options')) {
+    wp_die('権限がありません。', '送信テスト', ['response' => 403]);
+  }
+  check_admin_referer('ycf_test_mail');
+
+  $to = isset($_POST['ycf_test_to']) ? sanitize_email(wp_unslash($_POST['ycf_test_to'])) : '';
+  if (!is_email($to)) {
+    set_transient('ycf_test_mail_result_' . get_current_user_id(), [
+      'ok'    => false,
+      'to'    => (string) $to,
+      'error' => 'メールアドレスの形式が正しくありません。',
+    ], 120);
+    wp_safe_redirect(admin_url('options-general.php?page=' . YCF_SETTINGS_PAGE_SLUG));
+    exit;
+  }
+
+  // phpmailer_init 側がこの変数の有無を見て SMTP の応答を記録する
+  $GLOBALS['ycf_smtp_transcript'] = [];
+
+  $failure = null;
+  $capture = function ($wp_error) use (&$failure) {
+    $failure = $wp_error;
+  };
+  add_action('wp_mail_failed', $capture);
+
+  $sent = wp_mail(
+    $to,
+    sprintf('【%s】送信テスト', get_bloginfo('name')),
+    sprintf(
+      "これは %s の管理画面から送信したテストメールです。\n\n送信日時：%s\n\nこのメールが届いていれば、現在の SMTP 設定で送信できています。",
+      get_bloginfo('name'),
+      wp_date('Y-m-d H:i:s')
+    ),
+    ['Content-Type: text/plain; charset=UTF-8']
+  );
+
+  remove_action('wp_mail_failed', $capture);
+
+  $transcript = implode("\n", ycf_redact_smtp_transcript($GLOBALS['ycf_smtp_transcript']));
+  unset($GLOBALS['ycf_smtp_transcript']);
+
+  set_transient('ycf_test_mail_result_' . get_current_user_id(), [
+    'ok'         => (bool) $sent,
+    'to'         => $to,
+    'error'      => is_wp_error($failure) ? $failure->get_error_message() : '原因不明のエラーです。',
+    'transcript' => $transcript,
+  ], 120);
+
+  wp_safe_redirect(admin_url('options-general.php?page=' . YCF_SETTINGS_PAGE_SLUG));
+  exit;
+}
+add_action('admin_post_ycf_test_mail', 'ycf_handle_test_mail');
+
+/**
+ * SMTP のやり取りから認証情報を伏せる。
+ *
+ * AUTH の応答は base64 のユーザー名とパスワードそのもの。
+ * 画面に出す以上、スクリーンショットやチャットに貼られる前提で伏せる。
+ */
+function ycf_redact_smtp_transcript($lines) {
+  $redacted = [];
+  $after_auth = false;
+
+  foreach ((array) $lines as $line) {
+    $line = (string) $line;
+
+    // 伏せるのはこちらが送った資格情報だけ。サーバ側の `250-AUTH LOGIN PLAIN`
+    // （対応している認証方式の告知）は秘密ではなく、診断に要るので残す。
+    if (stripos($line, 'CLIENT -> SERVER') !== false && stripos($line, 'AUTH ') !== false) {
+      $after_auth = true;
+      $redacted[] = preg_replace('/(AUTH\s+\w+)\s+\S+/i', '$1 [伏字]', $line);
+      continue;
+    }
+
+    // AUTH 直後の CLIENT -> SERVER 行は base64 の資格情報
+    if ($after_auth && stripos($line, 'CLIENT -> SERVER') !== false) {
+      if (preg_match('/CLIENT -> SERVER:\s*[A-Za-z0-9+\/=]{8,}\s*$/', $line)) {
+        $redacted[] = 'CLIENT -> SERVER: [伏字]';
+        continue;
+      }
+      $after_auth = false;
+    }
+
+    $redacted[] = $line;
+  }
+
+  return $redacted;
 }

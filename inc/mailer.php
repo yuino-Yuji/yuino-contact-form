@@ -91,8 +91,38 @@ function ycf_configure_phpmailer($phpmailer) {
     $phpmailer->SMTPSecure   = '';
     $phpmailer->SMTPAutoTLS  = false;
   }
+
+  // 管理画面の送信テスト中のみ、SMTP の応答を丸ごと記録する。
+  // サーバが何と言って拒否したのかは、この応答にしか書かれていない。
+  if (isset($GLOBALS['ycf_smtp_transcript'])) {
+    $phpmailer->SMTPDebug   = 2; // SERVER: クライアント送信行とサーバ応答
+    $phpmailer->Debugoutput = function ($str, $level) {
+      $GLOBALS['ycf_smtp_transcript'][] = rtrim((string) $str);
+    };
+  }
 }
 add_action('phpmailer_init', 'ycf_configure_phpmailer');
+
+/**
+ * wp_mail() の失敗を、SMTP の応答込みでログに残す。
+ *
+ * WordPress は PHPMailer の例外を握り潰して false を返すだけなので、
+ * これが無いと「送信に失敗した」ことしか分からず、原因の特定ができない。
+ */
+function ycf_log_mail_failure($wp_error) {
+  if (!is_wp_error($wp_error)) {
+    return;
+  }
+  $data = $wp_error->get_error_data();
+  $to   = is_array($data) && !empty($data['to']) ? implode(', ', (array) $data['to']) : '(unknown)';
+
+  error_log(sprintf(
+    '[YuinoContactForm] wp_mail failed. to=%s / %s',
+    $to,
+    $wp_error->get_error_message()
+  ));
+}
+add_action('wp_mail_failed', 'ycf_log_mail_failure');
 
 function ycf_filter_mail_from($email) {
   $configured = ycf_get_setting('smtp_from_email');
