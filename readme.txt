@@ -4,7 +4,7 @@ Tags: contact form, mail, claude code
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.2.16
+Stable tag: 0.2.19
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -83,6 +83,16 @@ v0.2.3 で自動返信メールに `Auto-Submitted: auto-replied` 等の到達�
 非推奨。`wp-config.php` に `DISALLOW_FILE_EDIT` 推奨。本体を編集すると次回の自動更新で上書きされます。カスタムが必要な場合は `ycf_register_forms` フィルターや `option_ycf_settings` フィルター、テーマ側のテンプレート上書きで対応してください。
 
 == Changelog ==
+
+= 0.2.19 =
+* 確認画面で `id="_ycf_nonce"` が 2 つ出ていた問題を修正（WCAG 2.0 / JIS X 8341-3:2016 達成基準 4.1.1 構文解析）。送信用と修正用の 2 つのフォームで `wp_nonce_field()` を使っていたため、name と同じ id が重複していました。nonce の値と照合方法は変わらないため、テーマ側で確認画面を上書きしている場合もそのまま動きます（上書き側にも同じ重複がある場合は、同様に id なしの hidden に置き換えてください）。
+
+= 0.2.18 =
+* 管理画面に送信テストを追加。失敗時は SMTP サーバーとのやり取りを表示します（認証情報は伏字）。
+* 送信失敗（`wp_mail_failed`）の内容をエラーログに出すようにしました。
+
+= 0.2.17 =
+* 認証を要求しない SMTP サーバーに対応しました。SMTP が使えない設定で From だけ上書きされる場合は、設定画面に警告を出します。
 
 = 0.2.16 =
 * **フォームを開いたまま時間がたつと、入力内容が消えて送信できなくなる問題を修正**（WCAG 2.2 達成基準 2.2.1 タイミング調整可能）。

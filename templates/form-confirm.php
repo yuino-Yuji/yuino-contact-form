@@ -66,7 +66,13 @@ $back_action_url   = admin_url('admin-post.php');
     <?php endforeach; ?>
     <input type="hidden" name="action" value="<?php echo esc_attr(YCF_ACTION_SUBMIT); ?>" />
     <input type="hidden" name="ycf_form" value="<?php echo esc_attr($form); ?>" />
-    <?php wp_nonce_field(YCF_NONCE_ACTION_SUBMIT . '_' . $form, '_ycf_nonce'); ?>
+    <?php
+    // wp_nonce_field() は name と同じ値を id にも出力する。この画面には送信・修正の 2 フォームがあり、
+    // 両方で使うと id="_ycf_nonce" が重複する（WCAG 2.0 / JIS X 8341-3:2016 の 4.1.1 構文解析）。
+    // handler は $_POST['_ycf_nonce'] を読むだけなので、id なしの hidden で出す。
+    ?>
+    <input type="hidden" name="_ycf_nonce" value="<?php echo esc_attr(wp_create_nonce(YCF_NONCE_ACTION_SUBMIT . '_' . $form)); ?>" />
+    <?php wp_referer_field(); ?>
 
     <?php if (ycf_is_turnstile_configured()): ?>
       <div class="ContactForm__TurnstileWrap">
@@ -91,7 +97,8 @@ $back_action_url   = admin_url('admin-post.php');
     <input type="hidden" name="action" value="<?php echo esc_attr(YCF_ACTION_INPUT); ?>" />
     <input type="hidden" name="ycf_form" value="<?php echo esc_attr($form); ?>" />
     <input type="hidden" name="ycf_step" value="back" />
-    <?php wp_nonce_field(YCF_NONCE_ACTION_INPUT . '_' . $form, '_ycf_nonce'); ?>
+    <input type="hidden" name="_ycf_nonce" value="<?php echo esc_attr(wp_create_nonce(YCF_NONCE_ACTION_INPUT . '_' . $form)); ?>" />
+    <?php wp_referer_field(); ?>
     <div class="ContactForm__BackActions">
       <button type="submit" class="ContactForm__BackButton">修正する</button>
     </div>
