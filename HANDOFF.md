@@ -764,3 +764,17 @@ v0.2.4 を 2504hannan 本番（works.yuino-design.com/066hannan）に手動投�
 - **handler は変えない** — 照合は `$_POST['_ycf_nonce']` を `wp_verify_nonce()` に渡すだけで id に依存しないため、テンプレート側だけで直る。テーマで確認画面を上書きしている案件にも影響しない
 - **発見の経緯（2401mysite）** — JIS X 8341-3:2016 の適合表明に向けて Nu Html Checker で 4.1.1 を試験し、確認画面で検出。テーマ側の上書きテンプレートで先に直し、本体にも同じ重複があったため本リリースで修正
 
+### v0.2.20（2026-10-07）
+
+- **封筒の差出人（Sender / Return-Path）を送信元メールアドレスに揃える** — `ycf_configure_phpmailer()` で `setFrom()` の直後に `$phpmailer->Sender` を設定する。アドレスの決定は `ycf_get_envelope_sender()` に切り出し、`ycf_mail_envelope_sender` フィルターで差し替え・無効化（空文字）できる
+- 影響するのは **`mail()` 直送（`off` / `incomplete`）だけ**。SMTP 送信は PHPMailer が `Sender` が空なら `From` を MAIL FROM に使うため、もともと揃っている
+- README「メール到達性」に封筒の差出人の節を追加、フィルター一覧に `ycf_mail_envelope_sender` を追記
+
+#### 設計判断ポイント
+
+- **原因は DNS ではなく封筒だった** — WordPress 本体（`wp_mail()`）も本プラグインも `setFrom(…, false)` で呼ぶため `Sender` が空になり、`mail()` 直送では `-f` が付かない。封筒の差出人はサーバーのアカウント名になり、受信側は**そのホスト名のドメイン**で SPF を引く。送信元ドメインに正しい SPF を書いてあっても使われない。「SPF は設定済みなのに迷惑メールに入る」の正体
+- **v0.2.17 の「From だけ書き換わる挙動は変えない」方針との関係** — From を名乗る挙動自体は今回も変えていない。変えたのは封筒を From に合わせる点で、SPF に Web サーバーが載っている案件（＝正しく設定されている案件）が初めて正しく評価されるようになる。載っていない案件は `none` → `fail` / `softfail` に変わるが、もともと届いていない状態で、設定画面の警告の対象でもある。黙って悪化する経路は無いと判断した。それでも戻せるようにフィルターを用意した
+- **`setFrom()` の第 3 引数を true にしなかった** — `$auto` は「`Sender` が空のときだけ」設定する。WordPress は `$phpmailer` を使い回し、`Sender` は `wp_mail()` の初期化でクリアされないので、別の値が残っていると上書きされない。毎回明示的に代入する方が確実
+- **未検証の点** — `-f` の指定を MTA が受け付けるかはサーバー次第（信頼ユーザーでないと `X-Authentication-Warning` が付く、あるいは無視される構成がある）。リリース時点で実機確認できたのはコードの経路までで、**さくらのレンタルサーバーで Return-Path が実際に変わるかは 2607co-co-chifrais の本番で確認する**
+- **発見の経緯（2607co-co-chifrais）** — 本番公開当日の送信テストで、自動返信が Gmail の迷惑メールに入った。原文は `Return-Path: <co-co-chifrais@www4279.sakura.ne.jp>` ／ `spf=none (… does not designate permitted sender hosts)`。ドメイン側の SPF は `v=spf1 a:www4279.sakura.ne.jp mx ~all` で送信元サーバーを正しく許可していたが、判定対象が違うため使われていなかった
+

@@ -46,8 +46,43 @@ function ycf_get_smtp_mode() {
 }
 
 /**
+ * 封筒の差出人（envelope sender / Return-Path）に使うアドレスを返す。
+ *
+ * 受信側は SPF を「ヘッダの From」ではなく「封筒の差出人」のドメインで判定する。
+ * WordPress も本プラグインも setFrom() の第 3 引数を false にしているため、
+ * 何もしなければ PHPMailer の Sender は空のままになる。
+ *
+ * - SMTP 送信：PHPMailer が From を封筒にも使うので、空でも揃う
+ * - mail() 直送：-f が付かず、サーバのアカウント名（例 account@www1234.example.ne.jp）が
+ *   封筒の差出人になる。From のドメインに正しい SPF があっても判定に使われず、
+ *   SPF=none ＋ From と不一致になり、Gmail 等で迷惑メールに振り分けられる
+ *
+ * そこで From と同じアドレスを封筒にも入れる。空文字を返すと従来どおり何も設定しない。
+ *
+ * @param string $from_email 設定済みの送信元メールアドレス
+ * @return string 封筒の差出人。設定しない場合は空文字
+ */
+function ycf_get_envelope_sender($from_email) {
+  /**
+   * 封筒の差出人を差し替える／無効化する。
+   *
+   * @param string $sender     既定は送信元メールアドレス（From と同じ）
+   * @param string $from_email 設定済みの送信元メールアドレス
+   */
+  $sender = apply_filters('ycf_mail_envelope_sender', $from_email, $from_email);
+
+  if (!is_string($sender)) {
+    return '';
+  }
+  $sender = trim($sender);
+
+  return ($sender !== '' && is_email($sender)) ? $sender : '';
+}
+
+/**
  * PHPMailer 設定をフォーム送信時のみ流し込む。
  * - smtp_from_email が入っていれば From を上書き（SMTP接続有無を問わず）
+ * - 同じアドレスを封筒の差出人（Sender）にも入れる（v0.2.20 以降）
  * - SMTP接続情報が揃っていれば SMTP モードに切替（認証あり／なしは自動判定）
  */
 function ycf_configure_phpmailer($phpmailer) {
@@ -59,6 +94,11 @@ function ycf_configure_phpmailer($phpmailer) {
       !empty($settings['smtp_from_name']) ? $settings['smtp_from_name'] : '',
       false
     );
+
+    $sender = ycf_get_envelope_sender($settings['smtp_from_email']);
+    if ($sender !== '') {
+      $phpmailer->Sender = $sender;
+    }
   }
 
   $phpmailer->CharSet  = 'UTF-8';
