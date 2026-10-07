@@ -258,6 +258,18 @@ ISP のメールサーバーには、契約者からの接続に対して **SMTP
 - Google Workspace SMTP リレーを使う場合、**送信元アドレスのドメインを Workspace で登録（プライマリ／セカンダリ／エイリアス）しておかないと DKIM 署名が付かず**、SPF だけパスしても DKIM 不在で iCloud に silent reject される
 - `noreply@` 接頭辞は Apple iCloud で bulk/marketing 扱いされやすい。ビジネス要件が許せば `info@` `contact@` 等に変えるとさらに到達率向上
 
+**封筒の差出人（Return-Path）について（v0.2.20 以降）**：
+
+受信側は SPF を、ヘッダの From ではなく**封筒の差出人**のドメインで判定する。SMTP を使わず `mail()` で直送している場合、v0.2.19 までは封筒の差出人がサーバーのアカウント名（例：`account@www1234.example.ne.jp`）のままになり、**送信元ドメインに正しい SPF があっても判定に使われなかった**（結果は `spf=none`、かつ From と不一致）。v0.2.20 からは、送信元メールアドレスを封筒の差出人にも設定する。
+
+- 送信元ドメインの SPF に Web サーバーが含まれていれば、これだけで SPF が通り、From とも一致する
+- SPF に Web サーバーが**含まれていない**場合は、`none` だった判定が `fail` / `softfail` に変わる。どちらも届かない状態であることは同じで、対処は従来どおり「SMTP 経由に切り替える」か「SPF に Web サーバーを加える」（設定画面の警告を参照）
+- 配送エラーの通知（バウンス）は、サーバーのアカウントではなく送信元メールアドレスに届くようになる
+- SMTP 経由の送信では、もともと From が封筒に使われるため変化なし
+- 従来の挙動に戻す場合：`add_filter('ycf_mail_envelope_sender', '__return_empty_string');`
+
+確認は、届いたメールの原文（Gmail なら「原文を表示」）で `Return-Path` と `spf=` の行を見る。
+
 **動作確認の方法**：
 
 `check-auth@verifier.port25.com` 等の認証チェックサービスに本フォーム経由でテスト送信すると、SPF/DKIM/DMARC の各検査結果を含む詳細レポートが Reply-To に返ってくる（Google Workspace 管理コンソールのメールログ検索でも送信側の認証状態を確認可能）。
@@ -326,6 +338,7 @@ add_filter('option_ycf_settings', function ($value) {
 | filter | `ycf_register_forms` | フォーム定義の登録 |
 | filter | `ycf_validate` | カスタムバリデーション追加 |
 | filter | `ycf_template_replacements` | メールテンプレートの置換マップを追加 |
+| filter | `ycf_mail_envelope_sender` | 封筒の差出人（Return-Path）を差し替える。空文字を返すと設定しない（v0.2.20 以降） |
 | filter | `ycf_contact_value_meta` | 連絡先入力欄の placeholder 等をカスタマイズ |
 | action | `ycf_before_send` | 送信前フック（`$form_key, $data`） |
 | action | `ycf_after_send` | 送信後フック（`$form_key, $data`） |
