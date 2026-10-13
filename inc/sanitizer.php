@@ -31,7 +31,12 @@ function ycf_sanitize_input($form_key, $raw) {
         break;
 
       case 'email':
-        $clean[$key] = sanitize_email($value);
+        // 形式の崩れた値を空にしない。空にすると、エラーで入力画面へ戻ったときに欄が空になり、
+        // 利用者はどこを間違えたのかを確かめられず、一から入れ直すことになる
+        // （WCAG 2.2 達成基準 3.3.7 冗長な入力項目。解説書の例「送信した内容はフォームから消さない」）。
+        // 形式の検査は ycf_validate() の is_email() が行うため、通らない値が確認画面や送信へ進むことはない。
+        $email       = sanitize_email($value);
+        $clean[$key] = $email !== '' ? $email : sanitize_text_field($value);
         break;
 
       case 'tel':
