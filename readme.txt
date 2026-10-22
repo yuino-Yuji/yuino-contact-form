@@ -4,7 +4,7 @@ Tags: contact form, mail, claude code
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.2.21
+Stable tag: 0.2.22
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -83,6 +83,10 @@ v0.2.3 で自動返信メールに `Auto-Submitted: auto-replied` 等の到達�
 非推奨。`wp-config.php` に `DISALLOW_FILE_EDIT` 推奨。本体を編集すると次回の自動更新で上書きされます。カスタムが必要な場合は `ycf_register_forms` フィルターや `option_ycf_settings` フィルター、テーマ側のテンプレート上書きで対応してください。
 
 == Changelog ==
+
+= 0.2.22 =
+* **MX がドメイン自身を指す構成（例：MX = example.co.jp、SMTP ホスト = サーバーの実ホスト名）で、設定が保存できない問題を修正。** ホスト名が違っても同じ IP アドレスを指していれば同じサーバーと判断し、MX プリフライトを通します。
+* 受信先と別のサーバーの SMTP を使う構成（ハイジャック）の検出は変わりません。
 
 = 0.2.21 =
 * **サーバー側の検査でエラーになったとき、形式の崩れたメールアドレスが入力欄から消える問題を修正。** `type => 'email'` の欄は、形式が崩れていると値が空に置き換えられていたため、入力画面へ戻ったときに欄が空になっていました。入力された文字列をそのまま欄に戻します（WCAG 2.2 達成基準 3.3.7 冗長な入力項目）。
