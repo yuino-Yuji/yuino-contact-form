@@ -778,3 +778,15 @@ v0.2.4 を 2504hannan 本番（works.yuino-design.com/066hannan）に手動投�
 - **未検証の点** — `-f` の指定を MTA が受け付けるかはサーバー次第（信頼ユーザーでないと `X-Authentication-Warning` が付く、あるいは無視される構成がある）。リリース時点で実機確認できたのはコードの経路までで、**さくらのレンタルサーバーで Return-Path が実際に変わるかは 2607co-co-chifrais の本番で確認する**
 - **発見の経緯（2607co-co-chifrais）** — 本番公開当日の送信テストで、自動返信が Gmail の迷惑メールに入った。原文は `Return-Path: <co-co-chifrais@www4279.sakura.ne.jp>` ／ `spf=none (… does not designate permitted sender hosts)`。ドメイン側の SPF は `v=spf1 a:www4279.sakura.ne.jp mx ~all` で送信元サーバーを正しく許可していたが、判定対象が違うため使われていなかった
 
+### v0.2.22（2026-10-21）
+
+MX がドメイン自身を指す構成で、MX プリフライトが誤検知して設定を保存できなかった問題を修正（`inc/mx-preflight.php` に `ycf_hosts_share_address()` を追加し、MX ターゲットと SMTP ホストの IPv4 が 1 つでも一致すれば OK）。
+
+#### 設計判断ポイント
+
+- **名前ではなく行き先で判定する** — ハイジャックの本質は「受信先と別のサーバーがローカル配送してしまう」こと。同じ IP なら受信先サーバー自身なので、ローカル配送が正しい
+- **SMTP ホストを MX 名に書き換える回避は使えない** — 証明書は実ホスト名（`*.hpms1.jp`）向けで、MX 名（`katagirishoten.co.jp`）で接続すると TLS の名前検証で失敗する
+- **IPv4 のみ** — `gethostbynamel()` は A レコードだけを返す。AAAA だけのホストは従来どおり名前判定に落ちる（誤って通す方向には倒れない）
+- **v0.2.21 との関係** — v0.2.21（`fix/keep-invalid-email`）は未マージのまま。本修正は main から分岐したので、番号は 0.2.22 とし、0.2.21 を先に main へ入れる前提
+- **発見の経緯（2607katagiri）** — 本番は iFLAG リセラー（`nx1.hpms1.jp`）。MX = `katagirishoten.co.jp`（A = 183.90.183.26・逆引き `nx1.hpms1.jp`）で、宛先・送信元とも `info@katagirishoten.co.jp`。v0.2.18 で `ycf_check_mx_match()` が NG を返すことを実測。修正後は同ケース OK、MX が Google のドメインを XServer SMTP で送る典型ハイジャックは NG のまま（単体検証 4 ケース）
+

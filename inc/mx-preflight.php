@@ -15,7 +15,7 @@
  *   1. 宛先ドメインの apex（example.co.jp 等の二段TLDも考慮）と
  *      SMTPホストの apex が **異なれば** OK（純粋な外部配送）
  *   2. 同じ apex なら、宛先ドメインの MX を引いて、その中に SMTPホスト
- *      （または同じ apex）が含まれているかを確認
+ *      （または同じ apex、または同じ IP アドレスのホスト）が含まれているかを確認
  *   3. MX が SMTP ホストと無関係なら "ローカル配送ハイジャック" 警告
  */
 
@@ -69,6 +69,23 @@ function ycf_hosts_are_siblings($host_a, $host_b) {
     }
   }
   return false;
+}
+
+/**
+ * 2つのホスト名が同じ IPv4 アドレスを指すかを判定
+ *
+ * MX がドメイン自身（例：MX = example.co.jp）を指し、SMTP ホストがサーバーの
+ * 実ホスト名（例：nx1.hpms1.jp）という構成では、名前は無関係でも同じサーバーである。
+ * 受信先のサーバー自身の SMTP なのでローカル配送が正しく、ハイジャックにはならない。
+ * SMTP ホストは TLS 証明書の名前と一致させる必要があり、MX 名に書き換えて回避できない。
+ */
+function ycf_hosts_share_address($host_a, $host_b) {
+  $ips_a = @gethostbynamel($host_a);
+  $ips_b = @gethostbynamel($host_b);
+  if (!is_array($ips_a) || !is_array($ips_b)) {
+    return false;
+  }
+  return !empty(array_intersect($ips_a, $ips_b));
 }
 
 /**
@@ -158,6 +175,9 @@ function ycf_check_mx_match($smtp_host, $smtp_from_email, $recipient_email) {
       return ['ok' => true, 'reason' => '', 'mx' => $mx_targets];
     }
     if (ycf_hosts_are_siblings($smtp_host, $target)) {
+      return ['ok' => true, 'reason' => '', 'mx' => $mx_targets];
+    }
+    if (ycf_hosts_share_address($smtp_host, $target)) {
       return ['ok' => true, 'reason' => '', 'mx' => $mx_targets];
     }
   }
