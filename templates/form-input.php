@@ -129,6 +129,38 @@ $method_value = isset($data['connection_method']) && $data['connection_method'] 
             <?php endif; ?>
           </div>
 
+        <?php elseif ($type === 'checkboxes'):
+          // 複数選択。グループの見出しを支援技術に読ませるため fieldset / legend で包む
+          // （WCAG 2.2 達成基準 1.3.1 / 3.3.2）。値は name="key[]" の配列で送る
+          $checked_values = is_array($value) ? array_map('strval', $value) : [];
+        ?>
+          <fieldset class="ContactForm__Fieldset" <?php echo ycf_describedby_attr($describe); ?>>
+            <legend class="ContactForm__LabelRow">
+              <span class="ContactForm__Label"><?php echo esc_html($field['label'] ?? $key); ?></span>
+              <?php if ($required): ?><span class="ContactForm__Required">必須</span><?php endif; ?>
+            </legend>
+            <div class="ContactForm__Control">
+              <?php // 選択肢は箇条書き（ul / li）にしない。li の中に見えない入力欄があると、
+              // Safari の VoiceOver が項目ごとに空の印を読むことがあるため、div で並べる ?>
+              <div class="ContactForm__CheckList">
+                <?php foreach (($field['options'] ?? []) as $val => $label): ?>
+                  <div class="ContactForm__CheckItem">
+                    <label class="ContactForm__Checkbox">
+                      <input
+                        type="checkbox"
+                        name="<?php echo esc_attr($key); ?>[]"
+                        value="<?php echo esc_attr($val); ?>"
+                        <?php checked(in_array((string) $val, $checked_values, true)); ?>
+                        <?php echo $invalid_attr; ?>
+                      />
+                      <span class="ContactForm__CheckboxLabel"><?php echo esc_html($label); ?></span>
+                    </label>
+                  </div>
+                <?php endforeach; ?>
+              </div>
+            </div>
+          </fieldset>
+
         <?php elseif ($type === 'select'): ?>
           <div class="ContactForm__LabelRow">
             <label class="ContactForm__Label" for="<?php echo esc_attr($field_id); ?>"><?php echo esc_html($field['label'] ?? $key); ?></label>

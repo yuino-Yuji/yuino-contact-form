@@ -804,3 +804,16 @@ MX がドメイン自身を指す構成で、MX プリフライトが誤検知�
 - **v0.2.21 との関係** — 本修正の作業時点で v0.2.21（`fix/keep-invalid-email`）が未マージだったため番号を 0.2.22 とし、v0.2.21 → v0.2.22 の順に main へ取り込んだ（2026-10-22）
 - **発見の経緯（2607katagiri）** — 本番は iFLAG リセラー（`nx1.hpms1.jp`）。MX = `katagirishoten.co.jp`（A = 183.90.183.26・逆引き `nx1.hpms1.jp`）で、宛先・送信元とも `info@katagirishoten.co.jp`。v0.2.18 で `ycf_check_mx_match()` が NG を返すことを実測。修正後は同ケース OK、MX が Google のドメインを XServer SMTP で送る典型ハイジャックは NG のまま（単体検証 4 ケース）
 
+
+### v0.2.23（2026-11-01）
+
+複数選択のチェックボックス `type => 'checkboxes'` を追加（`inc/sanitizer.php`・`inc/validator.php`・`inc/mailer.php`・`inc/forms.php` の `ycf_get_checkboxes_labels()`・`templates/form-input.php`・`templates/form-confirm.php`）。
+
+#### 設計判断ポイント
+
+- **値は配列のまま持つ** — サニタイズで `options` にある値だけを `options` の並び順で残す。文字列につなぐのは表示の直前（確認画面・メール）だけにして、エラーで戻ったときのチェックの付け直しを値の照合だけで済ませる
+- **既存の `checkbox` とは別の型にした** — `checkbox` は同意用の 1 個のチェック（値は `'1'`）で、テーマ側の上書きテンプレートや JS（`data-ycf-agree`）が前提にしている。意味を広げると既存案件の挙動が変わるため、型を分けた
+- **検査は「1 つ以上選ぶ」だけ** — 文字数・形式の検査は配列には意味がないので、`checkboxes` は必須の判定のあと `continue` する。個々の `<input>` には `required` を付けない（付けると「全部にチェック」の意味になる）
+- **確認画面の hidden は `name="key[]"` で 1 つずつ** — 送り直したときもサニタイズが配列として受け取れる形にした
+- **テーマ側で文字列に正規化している案件（2504hannan）** — `text` で登録し、`admin_post_*` で `$_POST` を「、」つなぎの文字列に直す回避策。今回の変更後もそのまま動く。直すなら `checkboxes` に置き換えて正規化のフックを外す
+- **発見の経緯（2610cervantes）** — お問い合わせ種別を複数選択にする要望。README に「標準外なのでテーマ側で正規化」と書いていたが、2 件目になったため本体に入れた

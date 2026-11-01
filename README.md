@@ -119,7 +119,7 @@ add_filter('ycf_register_forms', function ($forms) {
 **Claude Code への依頼例**：
 - `「Yuino Contact Form を使って、お問い合わせフォームを作って」` → 上記のような定義を `functions.php` に書く
 - `「お問い合わせフォームに『資料請求』も追加して」` → `$forms['request']` を増やす
-- `「subject フィールドを複数チェックボックスに変えて」` → YCF 標準外なので独自正規化フィルターを追加
+- `「subject フィールドを複数チェックボックスに変えて」` → `type => 'checkboxes'` と `options` を指定する（0.2.23 以降）
 
 ---
 
@@ -152,6 +152,7 @@ add_filter('ycf_register_forms', function ($forms) {
 | `select` | プルダウン（`options` 必須） |
 | `radio` | ラジオボタン（`options` 必須） |
 | `checkbox` | チェックボックス（同意系に使う。`required` 必須なら必ずチェック） |
+| `checkboxes` | 複数選択のチェックボックス（`options` 必須）。値は選ばれた選択肢の配列（`options` の並び順）。`required` なら 1 つ以上の選択を求める。確認画面とメールでは選ばれたラベルを「、」でつないで出す（`{key}` / `{key_label}` とも同じ） |
 | `contact_value` | **特殊型**：同フォーム内の `connection_method`（radio）の選択値に応じて<br>placeholder／inputmode／pattern が自動切替される連絡先入力欄 |
 
 ### フィールド共通オプション
@@ -166,7 +167,7 @@ add_filter('ycf_register_forms', function ($forms) {
 | `autocomplete` | `autocomplete` 属性（`name`／`tel`／`email` 等） |
 | `pattern` | HTML5 `pattern` 属性 |
 | `default` | radio の初期選択値（**未指定時は最初の選択肢が自動で選択される**） |
-| `options` | select／radio の選択肢（連想配列：`value => label`） |
+| `options` | select／radio／checkboxes の選択肢（連想配列：`value => label`） |
 | `rows` | textarea の行数（既定6） |
 
 ---

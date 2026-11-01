@@ -4,7 +4,7 @@ Tags: contact form, mail, claude code
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.2.22
+Stable tag: 0.2.23
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -83,6 +83,13 @@ v0.2.3 で自動返信メールに `Auto-Submitted: auto-replied` 等の到達�
 非推奨。`wp-config.php` に `DISALLOW_FILE_EDIT` 推奨。本体を編集すると次回の自動更新で上書きされます。カスタムが必要な場合は `ycf_register_forms` フィルターや `option_ycf_settings` フィルター、テーマ側のテンプレート上書きで対応してください。
 
 == Changelog ==
+
+= 0.2.23 =
+* **複数選択のチェックボックス（`type => 'checkboxes'`）を追加。** `options` の中から複数を選べる欄です。値は選ばれた選択肢の配列で、`options` にない値は捨て、並びは `options` の順にそろえます。
+* `required` なら 1 つ以上の選択を求めます（「〜を選択してください。」）。
+* 確認画面・メールでは、選ばれたラベルを「、」でつないで出します（`{key}` と `{key_label}` のどちらも同じ文字列）。
+* 標準の入力テンプレートでは `fieldset` と `legend` で包み、グループの見出しを支援技術に読ませます。テーマでテンプレートを上書きしている場合は、`name="key[]"` で送ってください。
+* 従来の `checkbox`（同意用の 1 個のチェック）は変わりません。
 
 = 0.2.22 =
 * **MX がドメイン自身を指す構成（例：MX = example.co.jp、SMTP ホスト = サーバーの実ホスト名）で、設定が保存できない問題を修正。** ホスト名が違っても同じ IP アドレスを指していれば同じサーバーと判断し、MX プリフライトを通します。

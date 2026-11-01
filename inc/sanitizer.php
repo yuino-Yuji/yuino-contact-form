@@ -24,6 +24,13 @@ function ycf_sanitize_input($form_key, $raw) {
         $clean[$key] = !empty($value) ? '1' : '';
         break;
 
+      case 'checkboxes':
+        // 複数選択。options にある値だけを、options の並び順で残す（送られてきた順や重複には左右されない）
+        $picked  = is_array($value) ? array_map('strval', $value) : ($value !== '' ? [(string) $value] : []);
+        $allowed = isset($field['options']) ? array_map('strval', array_keys($field['options'])) : [];
+        $clean[$key] = array_values(array_intersect($allowed, $picked));
+        break;
+
       case 'radio':
       case 'select':
         $allowed = isset($field['options']) ? array_keys($field['options']) : [];

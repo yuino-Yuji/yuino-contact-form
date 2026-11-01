@@ -16,6 +16,14 @@ function ycf_validate($form_key, $data) {
     $required = !empty($field['required']);
     $value    = isset($data[$key]) ? $data[$key] : '';
 
+    // 複数選択は値が配列。必須の検査だけを行い、文字列向けの検査（形式・文字数）には進めない
+    if ($type === 'checkboxes') {
+      if ($required && empty($value)) {
+        $errors[$key] = ($field['label'] ?? $key) . 'を選択してください。';
+      }
+      continue;
+    }
+
     if ($required) {
       if ($type === 'checkbox') {
         if ($value !== '1') {

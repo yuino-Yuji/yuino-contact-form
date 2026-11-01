@@ -180,6 +180,7 @@ add_filter('wp_mail_from_name', 'ycf_filter_mail_from_name');
  * テンプレートのプレースホルダ置換。
  * 各フィールド値は `{field_key}` で参照可能。
  * radio / select は `{field_key_label}` でラベル文字列も参照できる。
+ * checkboxes（複数選択）は `{field_key}` も `{field_key_label}` も、選ばれたラベルを「、」でつないだ文字列になる。
  */
 function ycf_render_template($template, $data, $form_key) {
   $config = ycf_get_form_config($form_key);
@@ -194,9 +195,17 @@ function ycf_render_template($template, $data, $form_key) {
   ];
 
   foreach ($data as $key => $value) {
+    $type = isset($fields[$key]['type']) ? $fields[$key]['type'] : '';
+
+    if ($type === 'checkboxes') {
+      $joined = implode('、', ycf_get_checkboxes_labels($fields[$key], $value));
+      $replacements['{' . $key . '}']       = $joined;
+      $replacements['{' . $key . '_label}'] = $joined;
+      continue;
+    }
+
     $replacements['{' . $key . '}'] = (string) $value;
 
-    $type = isset($fields[$key]['type']) ? $fields[$key]['type'] : '';
     if ($type === 'radio' || $type === 'select') {
       $options = isset($fields[$key]['options']) ? $fields[$key]['options'] : [];
       $replacements['{' . $key . '_label}'] = isset($options[$value]) ? $options[$value] : (string) $value;

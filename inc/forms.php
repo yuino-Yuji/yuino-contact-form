@@ -130,6 +130,19 @@ function ycf_get_privacy_url($form_key) {
 }
 
 /**
+ * 複数選択（type => 'checkboxes'）の値を、選択肢のラベルの配列にする。
+ * 確認画面とメールの両方で使う（表示の区切りは呼び出し側で決める）。
+ */
+function ycf_get_checkboxes_labels($field, $value) {
+  $options = isset($field['options']) && is_array($field['options']) ? $field['options'] : [];
+  $labels  = [];
+  foreach ((array) $value as $v) {
+    $labels[] = isset($options[$v]) ? (string) $options[$v] : (string) $v;
+  }
+  return $labels;
+}
+
+/**
  * 連絡方法の選択肢（フィールド定義の `options` で上書き可）
  */
 function ycf_get_default_connection_method_options() {
