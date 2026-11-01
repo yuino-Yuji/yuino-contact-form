@@ -46,6 +46,8 @@ $back_action_url   = admin_url('admin-post.php');
           <?php
           if ($type === 'checkbox') {
             echo $value === '1' ? '同意済み' : '未同意';
+          } elseif ($type === 'checkboxes') {
+            echo esc_html(implode('、', ycf_get_checkboxes_labels($field, $value)));
           } elseif ($type === 'radio' || $type === 'select') {
             $options = $field['options'] ?? [];
             echo esc_html(isset($options[$value]) ? $options[$value] : $value);
@@ -62,7 +64,10 @@ $back_action_url   = admin_url('admin-post.php');
 
   <form method="post" action="<?php echo esc_url($submit_action_url); ?>" class="ContactForm__SubmitForm" data-ycf-submit-form>
     <?php foreach ($data as $key => $value): ?>
-      <input type="hidden" name="<?php echo esc_attr($key); ?>" value="<?php echo esc_attr($value); ?>" />
+      <?php // 複数選択（checkboxes）の値は配列なので、name="key[]" で 1 つずつ送り直す
+      foreach ((is_array($value) ? $value : [$value]) as $v): ?>
+        <input type="hidden" name="<?php echo esc_attr($key . (is_array($value) ? '[]' : '')); ?>" value="<?php echo esc_attr($v); ?>" />
+      <?php endforeach; ?>
     <?php endforeach; ?>
     <input type="hidden" name="action" value="<?php echo esc_attr(YCF_ACTION_SUBMIT); ?>" />
     <input type="hidden" name="ycf_form" value="<?php echo esc_attr($form); ?>" />
@@ -92,7 +97,10 @@ $back_action_url   = admin_url('admin-post.php');
 
   <form method="post" action="<?php echo esc_url($back_action_url); ?>" class="ContactForm__BackForm">
     <?php foreach ($data as $key => $value): ?>
-      <input type="hidden" name="<?php echo esc_attr($key); ?>" value="<?php echo esc_attr($value); ?>" />
+      <?php // 複数選択（checkboxes）の値は配列なので、name="key[]" で 1 つずつ送り直す
+      foreach ((is_array($value) ? $value : [$value]) as $v): ?>
+        <input type="hidden" name="<?php echo esc_attr($key . (is_array($value) ? '[]' : '')); ?>" value="<?php echo esc_attr($v); ?>" />
+      <?php endforeach; ?>
     <?php endforeach; ?>
     <input type="hidden" name="action" value="<?php echo esc_attr(YCF_ACTION_INPUT); ?>" />
     <input type="hidden" name="ycf_form" value="<?php echo esc_attr($form); ?>" />
