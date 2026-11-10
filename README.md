@@ -342,6 +342,7 @@ add_filter('option_ycf_settings', function ($value) {
 | filter | `ycf_validate` | カスタムバリデーション追加 |
 | filter | `ycf_template_replacements` | メールテンプレートの置換マップを追加 |
 | filter | `ycf_mail_envelope_sender` | 封筒の差出人（Return-Path）を差し替える。空文字を返すと設定しない（v0.2.20 以降） |
+| filter | `ycf_prevent_form_page_cache` | フォームページにキャッシュさせないヘッダーを送るか（既定 true。v0.2.24 以降） |
 | filter | `ycf_contact_value_meta` | 連絡先入力欄の placeholder 等をカスタマイズ |
 | action | `ycf_before_send` | 送信前フック（`$form_key, $data`） |
 | action | `ycf_after_send` | 送信後フック（`$form_key, $data`） |
@@ -369,6 +370,12 @@ add_filter('option_ycf_settings', function ($value) {
 5. Turnstile 検証 → 管理者通知 → 自動返信 → サンクスページへリダイレクト
 
 入力値はトランジェントで 5 分間保持され、Cookie のトークンで紐づけられる。
+
+確認画面・エラー表示は、2 → 3 のリダイレクトで戻ったフォームページを PHP が出し分ける。
+そのためフォームページはページキャッシュに保存されてはならず、v0.2.24 以降は
+フォームページの表示時に `nocache_headers()` と `DONOTCACHEPAGE` を送る。
+キャッシュ系プラグインやサーバーのキャッシュが `Cache-Control` を無視する設定の場合は、
+そちらでもフォームページの URL を除外すること。
 
 ---
 

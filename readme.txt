@@ -4,7 +4,7 @@ Tags: contact form, mail, claude code
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.2.23
+Stable tag: 0.2.24
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -83,6 +83,11 @@ v0.2.3 で自動返信メールに `Auto-Submitted: auto-replied` 等の到達�
 非推奨。`wp-config.php` に `DISALLOW_FILE_EDIT` 推奨。本体を編集すると次回の自動更新で上書きされます。カスタムが必要な場合は `ycf_register_forms` フィルターや `option_ycf_settings` フィルター、テーマ側のテンプレート上書きで対応してください。
 
 == Changelog ==
+
+= 0.2.24 =
+* **サーバーのページキャッシュが有効な環境で、「確認する」を押すと入力内容が消えて入力画面に戻る問題を修正。** 確認画面・エラー表示は、送信後にフォームページへ戻ったときに PHP が出し分けていますが、ページキャッシュがフォームページを保存していると PHP が動かず、キャッシュの空の入力画面が返っていました。キャッシュが切れた後に送り直すと確認画面へ進むため、「2 回目は進む」ように見えます。
+* フォームページ（`page_slug` のページ）を表示するときだけ、キャッシュさせないヘッダー（`Cache-Control: no-store` 等）を送り、`DONOTCACHEPAGE` を定義します。他のページのキャッシュは変わりません。
+* 不要な場合は `ycf_prevent_form_page_cache` フィルターで false を返してください。
 
 = 0.2.23 =
 * **複数選択のチェックボックス（`type => 'checkboxes'`）を追加。** `options` の中から複数を選べる欄です。値は選ばれた選択肢の配列で、`options` にない値は捨て、並びは `options` の順にそろえます。
