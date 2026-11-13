@@ -4,7 +4,7 @@ Tags: contact form, mail, claude code
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.2.24
+Stable tag: 0.2.25
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -83,6 +83,12 @@ v0.2.3 で自動返信メールに `Auto-Submitted: auto-replied` 等の到達�
 非推奨。`wp-config.php` に `DISALLOW_FILE_EDIT` 推奨。本体を編集すると次回の自動更新で上書きされます。カスタムが必要な場合は `ycf_register_forms` フィルターや `option_ycf_settings` フィルター、テーマ側のテンプレート上書きで対応してください。
 
 == Changelog ==
+
+= 0.2.25 =
+* **管理画面のプロバイダ案内に、Gmail の 2027 年 1 月の変更についての注意を追加。** Gmail は 2027 年 1 月に、ブラウザ版の「他のアカウントのメールを確認」（POP の取り込み）・Google 以外のアドレスの「差出人」・Gmailify をやめます。YCF の送信そのものは影響を受けません。
+* 通知の宛先を Gmail で取り込んで読んでいると、2027 年 1 月から Gmail に入ってこなくなり「届かなくなった」と見えるため、サーバー側の自動転送などへ移すよう案内しています。
+* `smtp.gmail.com` を個人の `@gmail.com` で認証し、送信元だけ Workspace 外のアドレスにする組み方は使わないよう案内しています。
+* 動作の変更はありません（案内文と説明書きのみ）。
 
 = 0.2.24 =
 * **サーバーのページキャッシュが有効な環境で、「確認する」を押すと入力内容が消えて入力画面に戻る問題を修正。** 確認画面・エラー表示は、送信後にフォームページへ戻ったときに PHP が出し分けていますが、ページキャッシュがフォームページを保存していると PHP が動かず、キャッシュの空の入力画面が返っていました。キャッシュが切れた後に送り直すと確認画面へ進むため、「2 回目は進む」ように見えます。

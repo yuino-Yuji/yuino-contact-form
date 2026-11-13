@@ -207,7 +207,7 @@ function ycf_section_smtp_intro() {
           <td><code>smtp.gmail.com</code></td>
           <td>587 / 465</td>
           <td>STARTTLS / SSL</td>
-          <td>個人ユーザーの2段階認証 → アプリパスワード発行（16桁）</td>
+          <td>個人ユーザーの2段階認証 → アプリパスワード発行（16桁）。<strong>認証ユーザーは Workspace のアカウント</strong>にする。個人の <code>@gmail.com</code> で認証し、Gmail の「差出人」に登録した Workspace 外のアドレスを送信元にする組み方は使わない（下の注意を参照）</td>
         </tr>
         <tr>
           <td><strong>Microsoft 365</strong></td>
@@ -221,7 +221,7 @@ function ycf_section_smtp_intro() {
           <td>各社の <code>sv*.example.jp</code> 等</td>
           <td>465 / 587</td>
           <td>SSL / STARTTLS</td>
-          <td>受信先のドメインが同じサーバー上にある必要あり（MX プリフライト確認）</td>
+          <td>受信先のドメインが同じサーバー上にある必要あり（MX プリフライト確認）。受け取った通知を<strong>どこで読んでいるか</strong>も確認する（下の注意を参照）</td>
         </tr>
         <tr>
           <td><strong>ISP のメールサーバ（認証なし）</strong></td>
@@ -232,6 +232,14 @@ function ycf_section_smtp_intro() {
         </tr>
       </tbody>
     </table>
+    <div style="margin-top:0.75em;padding:0.5em 1em;background:#fcf9e8;border-left:4px solid #dba617;">
+      <p style="margin:0.25em 0;font-weight:600;">注意：Gmail は 2027 年 1 月に、Google 以外のメールアドレスとの連携をやめます</p>
+      <p style="margin:0.25em 0;font-size:0.9em;">終わるのは、ブラウザ版 Gmail の「他のアカウントのメールを確認」（POP の取り込み）・「差出人」（Google 以外のアドレス）・Gmailify の 3 つです。Google Workspace のアドレスと別名は対象外です（<a href="https://support.google.com/mail/answer/17101213?hl=ja" target="_blank" rel="noopener">Google のヘルプ</a>）。</p>
+      <ul style="margin:0.25em 0 0.25em 1.5em;list-style:disc;font-size:0.9em;">
+        <li><strong>通知の宛先を Gmail で取り込んで読んでいる場合</strong>：共用サーバーなどのアドレスに届いた通知を「他のアカウントのメールを確認」で Gmail に取り込んでいると、2027 年 1 月から取り込まれなくなります。フォームは正しく送れていて、サーバーの受信箱にも届いているのに、Gmail に入ってこないため「届かなくなった」と見えます。<strong>サーバー側の自動転送</strong>（Gmail の変更の影響を受けません）に切り替えるか、WEBメール・メールソフト・Gmail アプリ（別のアカウントとして追加）で読むよう、公開前に案内してください。</li>
+        <li><strong>SMTP の認証に個人の Gmail を使わない</strong>：<code>smtp.gmail.com</code> に <code>@gmail.com</code> でログインし、送信元だけ Workspace 外のアドレスにする組み方は、Gmail の「差出人」の登録に頼っています。この登録が使えなくなると、送信元が書き換えられるか、送れなくなるおそれがあります。受信先のサーバーの SMTP を使ってください。</li>
+      </ul>
+    </div>
     <p style="margin-top:0.5em;font-size:0.9em;">パスワード／アプリパスワードは <code>wp-config.php</code> の <code>YCF_SMTP_PASSWORD</code> 定数に書きます（下のセクション参照）。認証を要求しないサーバでは、認証ユーザー名を空にすればパスワードの設定自体が不要です。</p>
     <p style="margin-top:0.5em;font-size:0.9em;">ポート番号と暗号化方式の組み合わせに注意してください。<strong>587 は STARTTLS、465 は SSL</strong> です。食い違っていると接続に失敗します。</p>
   </details>
